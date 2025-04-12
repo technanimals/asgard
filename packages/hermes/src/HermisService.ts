@@ -3,27 +3,41 @@ export interface HermisServiceInterface<
   TName extends string = string,
   TInstance = unknown,
 > {
+  /**
+   * The name of the service. This should be unique across all services.
+   */
   serviceName: TName;
+  /**
+   * The register method is called when the service is registered with the service discovery.
+   */
   register(): Promise<TInstance> | TInstance;
 }
 
-// Base service class that can be extended by specific services
 export abstract class HermisService<
   TName extends string = string,
   TInstance = unknown,
 > implements HermisServiceInterface<TName, TInstance>
 {
+  /**
+   * The name of the service. This should be unique across all services.
+   */
   abstract serviceName: TName;
+  /**
+   * The register method is called when the service is registered with the service discovery.
+   */
   abstract register(): Promise<TInstance> | TInstance;
-
+  /**
+   * The discover method adds the service to the service discovery.
+   */
   discover() {
     this.serviceDiscovery.add(this);
   }
-
+  /**
+   * 
+   * @param serviceDiscovery The service discovery instance to register the service with.
+   */
   constructor(readonly serviceDiscovery: HermisServiceDiscovery) {}
 }
-
-// Service discovery class with proper typing
 
 export class HermisServiceDiscovery<
   // biome-ignore lint/complexity/noBannedTypes: <explanation>
@@ -34,7 +48,6 @@ export class HermisServiceDiscovery<
   private services = new Map<string, HermisServiceInterface>();
   s!: TServices;
 
-  // Singleton pattern
   static getInstance<
     // biome-ignore lint/complexity/noBannedTypes: <explanation>
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -46,18 +59,23 @@ export class HermisServiceDiscovery<
     return HermisServiceDiscovery._instance as HermisServiceDiscovery<T>;
   }
 
-  // Private constructor for singleton
   private constructor() {}
-
-  // Add a service to the registry
+  /**
+   * Add a service to the service discovery.
+   * 
+   * @param service The service to add.
+   */
   add<TName extends string, TInstance>(
     service: HermisServiceInterface<TName, TInstance>
   ): void {
-    console.log("Adding service:", service.serviceName);
     this.services.set(service.serviceName, service);
   }
-
-  // Get a service by name
+  /**
+   * Get a service from the service discovery.
+   * 
+   * @param name  - The name of the service to get.
+   * @returns The service instance.
+   */
   async get<K extends keyof TServices & string>(
     name: K
   ): Promise<TServices[K]> {
@@ -69,7 +87,12 @@ export class HermisServiceDiscovery<
 
     return service.register() as Promise<TServices[K]>;
   }
-
+  /**
+   * Get multiple services from the service discovery.
+   * 
+   * @param names - The names of the services to get.
+   * @returns - An object containing the service instances.
+   */
   async getMany<K extends (keyof TServices & string)[]>(
     names: [...K]
   ): Promise<{ [P in K[number]]: TServices[P] }> {
@@ -82,7 +105,12 @@ export class HermisServiceDiscovery<
     return result;
   }
 
-  // Check if a service exists
+  /**
+   * Check if a service exists in the service discovery.
+   * 
+   * @param name - The name of the service to check.
+   * @returns True if the service exists, false otherwise.
+   */
   has(name: string): boolean {
     return this.services.has(name);
   }
