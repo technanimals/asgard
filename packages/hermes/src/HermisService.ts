@@ -33,7 +33,7 @@ export abstract class HermisService<
     this.serviceDiscovery.add(this);
   }
   /**
-   * 
+   *
    * @param serviceDiscovery The service discovery instance to register the service with.
    */
   constructor(readonly serviceDiscovery: HermisServiceDiscovery) {}
@@ -62,7 +62,7 @@ export class HermisServiceDiscovery<
   private constructor() {}
   /**
    * Add a service to the service discovery.
-   * 
+   *
    * @param service The service to add.
    */
   add<TName extends string, TInstance>(
@@ -72,7 +72,7 @@ export class HermisServiceDiscovery<
   }
   /**
    * Get a service from the service discovery.
-   * 
+   *
    * @param name  - The name of the service to get.
    * @returns The service instance.
    */
@@ -89,7 +89,7 @@ export class HermisServiceDiscovery<
   }
   /**
    * Get multiple services from the service discovery.
-   * 
+   *
    * @param names - The names of the services to get.
    * @returns - An object containing the service instances.
    */
@@ -107,7 +107,7 @@ export class HermisServiceDiscovery<
 
   /**
    * Check if a service exists in the service discovery.
-   * 
+   *
    * @param name - The name of the service to check.
    * @returns True if the service exists, false otherwise.
    */
@@ -115,7 +115,7 @@ export class HermisServiceDiscovery<
     return this.services.has(name);
   }
 }
-
+/** The options bag to pass to the {@link search} method. */
 export interface HermisServiceConstructor<
   TName extends string = string,
   TInstance = unknown,
