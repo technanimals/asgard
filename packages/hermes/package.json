@@ -5,6 +5,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "module": "./src/index.ts",
+  "jsr": {
+    "packageManager": "pnpm"
+  },
+  "publishConfig": {
+    "registry": "https://npm.jsr.io"
+  },
   "bin": {
     "hermes": "./bin/hermes.ts"
   },
