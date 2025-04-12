@@ -3,7 +3,6 @@
 A TypeScript service discovery library for your application architecture.
 
 [![JSR Score](https://img.shields.io/jsr/v/@asgard/hermes)](https://jsr.io/@asgard/hermes)
-[![npm](https://img.shields.io/npm/v/@asgard/hermes)](https://www.npmjs.com/package/@asgard/hermes)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
