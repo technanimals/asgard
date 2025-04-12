@@ -1,9 +1,10 @@
 {
   "name": "@asgard/hermes",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "module": "./src/index.ts",
+  "description": "lightweight, type-safe service discovery library for TypeScript applications.",
   "jsr": {
     "packageManager": "pnpm"
   },
