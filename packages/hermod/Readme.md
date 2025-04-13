@@ -7,7 +7,7 @@ A TypeScript service discovery library for your application architecture.
 
 ## Overview
 
-`@asgard/hermod` is a lightweight, type-safe service discovery library for TypeScript applications. Named after hermod, the messenger of the Greek gods, this package facilitates communication between different services in your application, making it simple to register, discover, and consume services with full type safety.
+`@asgard/hermod` is a lightweight, type-safe service discovery library for TypeScript applications. Named after the Norse god who served as the messenger between the realms, this package facilitates communication between different services in your application, making it simple to register, discover, and consume services with full type safety.
 
 ## Installation
 
