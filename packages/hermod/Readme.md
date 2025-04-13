@@ -36,8 +36,8 @@ npx jsr add @asgard/hermod
 
 ```ts
   import { 
-    HermisServiceDiscovery, 
-    HermisService 
+    HermodServiceDiscovery, 
+    HermodService 
   } from '@asgard/hermod';
 
   // Define your service types
@@ -47,10 +47,10 @@ npx jsr add @asgard/hermod
   }
 
   // Create a service discovery instance
-  const serviceDiscovery = HermisServiceDiscovery.getInstance<Services>();
+  const serviceDiscovery = HermodServiceDiscovery.getInstance<Services>();
 
   // Create and register services
-  class LoggerService extends HermisService<'logger', Logger> {
+  class LoggerService extends HermodService<'logger', Logger> {
     serviceName = 'logger' as const;
     
     register() {
@@ -85,10 +85,10 @@ interface Services {
 }
 
 // Get service discovery instance
-const serviceDiscovery = HermisServiceDiscovery.getInstance<Services>();
+const serviceDiscovery = HermodServiceDiscovery.getInstance<Services>();
 
 // Create logger service
-class LoggerService extends HermisService<'logger', Logger> {
+class LoggerService extends HermodService<'logger', Logger> {
   serviceName = 'logger' as const;
   
   register() {
@@ -99,7 +99,7 @@ class LoggerService extends HermisService<'logger', Logger> {
 }
 
 // Create database service
-class DatabaseService extends HermisService<'database', Database> {
+class DatabaseService extends HermodService<'database', Database> {
   serviceName = 'database' as const;
   
   async register() {
@@ -136,7 +136,7 @@ async function main() {
 ## Service Dependencies
 
 ```ts
-class ConfigService extends HermisService<'config', Record<string, any>> {
+class ConfigService extends HermodService<'config', Record<string, any>> {
   serviceName = 'config' as const;
   
   register() {
@@ -147,7 +147,7 @@ class ConfigService extends HermisService<'config', Record<string, any>> {
   }
 }
 
-class ApiService extends HermisService<'api', ApiClient> {
+class ApiService extends HermodService<'api', ApiClient> {
   serviceName = 'api' as const;
   
   async register() {
