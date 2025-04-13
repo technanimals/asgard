@@ -5,4 +5,4 @@ export {
 	type HermodServiceInterface,
 	type HermodServiceRecord,
 	type ExtractServiceName,
-} from './HermodService';
+} from './HermodService.ts';

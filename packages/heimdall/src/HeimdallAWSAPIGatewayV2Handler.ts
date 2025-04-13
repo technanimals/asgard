@@ -4,7 +4,7 @@ import type {
 	HeimdallEndpointHandlerInput,
 	HeimdallEndpointValidationOutput,
 	HeimdallPath,
-} from './HeimdallEndpoint';
+} from './HeimdallEndpoint.ts';
 import {
 	type HermodServiceConstructor,
 	HermodServiceDiscovery,

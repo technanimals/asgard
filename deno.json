@@ -1,0 +1,7 @@
+{
+	"workspace": ["./packages/heimdall", "./packages/hermod"],
+	"imports": {
+		"@biomejs/biome": "npm:@biomejs/biome",
+		"@std/assert": "jsr:@std/assert"
+	}
+}

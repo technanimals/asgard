@@ -1,1 +1,1 @@
-export { HeimdallEndpoint } from './HeimdallEndpoint';
+export { HeimdallEndpoint } from './HeimdallEndpoint.ts';

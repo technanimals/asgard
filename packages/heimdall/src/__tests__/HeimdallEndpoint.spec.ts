@@ -1,18 +1,21 @@
-import { HeimdallEndpoint } from '../HeimdallEndpoint';
-import { describe, it, expect } from 'vitest';
+import { HeimdallEndpoint } from '../HeimdallEndpoint.ts';
+import { assertInstanceOf } from '@std/assert';
+
 import * as HttpStatusCodes from 'stoker/http-status-codes';
 import { z } from 'zod';
-import { HermisService } from '@asgard/hermod';
+import { HermodService } from '@asgard/hermod';
 
-class ConsoleLoggerService extends HermisService<'log', Console> {
-	serviceName: 'log';
+class ConsoleLoggerService extends HermodService<'log', Console> {
+	serviceName = 'log' as const;
 	register(): Console {
 		return console;
 	}
 }
 
-describe('HeimdallEndpoint', () => {
-	it('should create an instance of HeimdallEndpoint', async () => {
+Deno.test({
+	name: 'Should create an endpoint',
+
+	fn: () => {
 		const bodySchema = z.object({
 			a: z.string(),
 		});
@@ -22,16 +25,14 @@ describe('HeimdallEndpoint', () => {
 			method: 'GET',
 			body: bodySchema,
 			services: [ConsoleLoggerService],
-			handler: async ({ body, params, response, search, services }) => {
-				return {
+			handler: () => {
+				return Promise.resolve({
 					statusCode: HttpStatusCodes.OK,
 					body: undefined,
-				};
+				});
 			},
 		});
 
-		const body = await endpoint.body({});
-
-		expect(endpoint).toBeInstanceOf(HeimdallEndpoint);
-	});
+		assertInstanceOf(endpoint, HeimdallEndpoint);
+	},
 });

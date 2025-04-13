@@ -1,1 +1,1 @@
-export { HeimdallAWSAPIGatewayV2Handler } from './HeimdallAWSAPIGatewayV2Handler';
+export { HeimdallAWSAPIGatewayV2Handler } from './HeimdallAWSAPIGatewayV2Handler.ts';
