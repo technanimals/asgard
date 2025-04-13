@@ -13,5 +13,5 @@
 	"[graphql]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
-	"cSpell.words": ["Hermis", "hermod"]
+	"cSpell.words": ["AWSAPI", "Hermis", "hermod"]
 }

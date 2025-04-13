@@ -72,6 +72,26 @@ export class HermodServiceDiscovery<
 			this.services.set(service.serviceName, service);
 		}
 	}
+
+	/**
+	 * Register multiple services with the service discovery.
+	 *
+	 * @param services -  The services to register.
+	 */
+	async register<T extends HermodServiceConstructor>(services: T[]) {
+		const names: ExtractServiceNames<typeof services>[] = [];
+		for await (const Service of services) {
+			const service = new Service(this);
+			service.discover();
+			// @ts-ignore
+			names.push(service.serviceName);
+
+			await service.register();
+		}
+
+		return this.getMany(names);
+	}
+
 	/**
 	 * Get a service from the service discovery.
 	 *
@@ -136,6 +156,16 @@ type ExtractServiceInfo<T> = T extends HermodServiceConstructor<
 	? { name: Name; instance: Instance }
 	: never;
 
+export type ExtractServiceName<T> = T extends HermodServiceConstructor<
+	infer Name
+>
+	? Name
+	: never;
+export type ExtractServiceNames<T> = T extends HermodServiceConstructor<
+	infer Name
+>[]
+	? Name
+	: never;
 // Now let's create a type to build a record from an array of service classes
 export type HermodServiceRecord<T extends HermodServiceConstructor[]> = {
 	[K in Extract<ExtractServiceInfo<T[number]>['name'], string>]: Extract<

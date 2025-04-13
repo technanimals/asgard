@@ -1,14 +1,13 @@
 import type {
 	HermodServiceConstructor,
 	HermodServiceRecord,
-	HermodServiceDiscovery,
 } from '@asgard/hermod';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import type * as HttpStatusCodes from 'stoker/http-status-codes';
 
 export class HeimdallEndpoint<
-	TPath extends string,
+	TPath extends HeimdallPath,
 	TBody extends StandardSchemaV1 | undefined = undefined,
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 	TSearch extends StandardSchemaV1 | undefined = undefined,
@@ -23,9 +22,18 @@ export class HeimdallEndpoint<
 	private _search: TSearch;
 	private _response: TResponse;
 
-	readonly path: string;
+	readonly path: HeimdallPath;
+	readonly method: HttpMethod;
 
-	private _services: TServices;
+	readonly services: TServices;
+
+	execute: HeimdallEndpointHandler<
+		TBody,
+		TResponse,
+		TSearch,
+		TParams,
+		TServices
+	>;
 
 	constructor(
 		options: HeimdallEndpointOptions<
@@ -41,7 +49,15 @@ export class HeimdallEndpoint<
 		this._body = options.body as TBody;
 		this._search = options.body as TSearch;
 		this._response = options.response as TResponse;
-		this._services = options.services || [];
+		this.services = options.services || [];
+		this.path = options.path;
+		this.method = options.method;
+
+		this.execute = options.handler;
+	}
+
+	get route(): HeimdallRoute<TPath, HttpMethod> {
+		return `${this.method} ${this.path}` as HeimdallRoute<TPath, HttpMethod>;
 	}
 
 	private async parse<T extends StandardSchemaV1 | undefined = undefined>(
@@ -100,7 +116,7 @@ export type HeimdallEndpointHandlerInput<
 	TParams extends StandardSchemaV1 | undefined = undefined,
 	TServices extends HermodServiceConstructor[] = [],
 > = {
-	body: HeimdallEndpointValidationOutput<TBody>;
+	data: HeimdallEndpointValidationOutput<TBody>;
 	response: HeimdallEndpointValidationOutput<TResponse>;
 	search: HeimdallEndpointValidationOutput<TSearch>;
 	params: HeimdallEndpointValidationOutput<TParams>;
@@ -173,9 +189,6 @@ export type HeimdallEndpointOptions<
 	>;
 };
 
-// /user/:id => { id: string }
-// /user/:id/posts/:postId => { id: string; postId: string }
-
 type StatusCode = typeof HttpStatusCodes;
 
 export type SuccessStatusCode =
@@ -203,3 +216,10 @@ export type HeimdallEndpointErrorResponse = {
 export type HeimdallEndpointResponse<
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 > = HeimdallEndpointSuccessResponse<TResponse> | HeimdallEndpointErrorResponse;
+
+export type HeimdallPath = `/${string}`;
+
+export type HeimdallRoute<
+	TPath extends HeimdallPath,
+	TMethod extends HttpMethod,
+> = `${TMethod} ${TPath}`;

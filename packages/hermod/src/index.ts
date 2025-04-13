@@ -4,4 +4,5 @@ export {
 	type HermodServiceConstructor,
 	type HermodServiceInterface,
 	type HermodServiceRecord,
+	type ExtractServiceName,
 } from './HermodService';
