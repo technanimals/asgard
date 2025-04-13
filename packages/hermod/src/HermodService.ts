@@ -78,7 +78,9 @@ export class HermodServiceDiscovery<
 	 *
 	 * @param services -  The services to register.
 	 */
-	async register<T extends HermodServiceConstructor>(services: T[]) {
+	async register<T extends HermodServiceConstructor[]>(
+		services: T,
+	): Promise<HermodServiceRecord<T>> {
 		const names: ExtractServiceNames<typeof services>[] = [];
 		for await (const Service of services) {
 			const service = new Service(this);
@@ -89,7 +91,9 @@ export class HermodServiceDiscovery<
 			await service.register();
 		}
 
-		return this.getMany(names);
+		const registeredServices = await this.getMany(names);
+
+		return registeredServices as unknown as HermodServiceRecord<T>;
 	}
 
 	/**
@@ -98,9 +102,7 @@ export class HermodServiceDiscovery<
 	 * @param name  - The name of the service to get.
 	 * @returns The service instance.
 	 */
-	async get<K extends keyof TServices & string>(
-		name: K,
-	): Promise<TServices[K]> {
+	get<K extends keyof TServices & string>(name: K): Promise<TServices[K]> {
 		const service = this.services.get(name);
 
 		if (!service) {
