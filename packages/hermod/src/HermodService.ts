@@ -1,5 +1,5 @@
 // Generic service interface that all services must implement
-export interface HermisServiceInterface<
+export interface HermodServiceInterface<
 	TName extends string = string,
 	TInstance = unknown,
 > {
@@ -13,10 +13,10 @@ export interface HermisServiceInterface<
 	register(): Promise<TInstance> | TInstance;
 }
 
-export abstract class HermisService<
+export abstract class HermodService<
 	TName extends string = string,
 	TInstance = unknown,
-> implements HermisServiceInterface<TName, TInstance>
+> implements HermodServiceInterface<TName, TInstance>
 {
 	/**
 	 * The name of the service. This should be unique across all services.
@@ -36,27 +36,27 @@ export abstract class HermisService<
 	 *
 	 * @param serviceDiscovery The service discovery instance to register the service with.
 	 */
-	constructor(readonly serviceDiscovery: HermisServiceDiscovery) {}
+	constructor(readonly serviceDiscovery: HermodServiceDiscovery) {}
 }
 
-export class HermisServiceDiscovery<
+export class HermodServiceDiscovery<
 	// biome-ignore lint/complexity/noBannedTypes: <explanation>
 	TServices extends Record<string, unknown> = {},
 > {
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	private static _instance: HermisServiceDiscovery<any>;
-	private services = new Map<string, HermisServiceInterface>();
+	private static _instance: HermodServiceDiscovery<any>;
+	private services = new Map<string, HermodServiceInterface>();
 	s!: TServices;
 
 	static getInstance<
 		// biome-ignore lint/complexity/noBannedTypes: <explanation>
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		T extends Record<any, unknown> = {},
-	>(): HermisServiceDiscovery<T> {
-		if (!HermisServiceDiscovery._instance) {
-			HermisServiceDiscovery._instance = new HermisServiceDiscovery<T>();
+	>(): HermodServiceDiscovery<T> {
+		if (!HermodServiceDiscovery._instance) {
+			HermodServiceDiscovery._instance = new HermodServiceDiscovery<T>();
 		}
-		return HermisServiceDiscovery._instance as HermisServiceDiscovery<T>;
+		return HermodServiceDiscovery._instance as HermodServiceDiscovery<T>;
 	}
 
 	private constructor() {}
@@ -66,7 +66,7 @@ export class HermisServiceDiscovery<
 	 * @param service The service to add.
 	 */
 	add<TName extends string, TInstance>(
-		service: HermisServiceInterface<TName, TInstance>,
+		service: HermodServiceInterface<TName, TInstance>,
 	): void {
 		if (!this.services.has(service.serviceName)) {
 			this.services.set(service.serviceName, service);
@@ -118,18 +118,18 @@ export class HermisServiceDiscovery<
 	}
 }
 /** The options bag to pass to the {@link search} method. */
-export interface HermisServiceConstructor<
+export interface HermodServiceConstructor<
 	TName extends string = string,
 	TInstance = unknown,
 > {
 	new (
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		serviceDiscovery: HermisServiceDiscovery<any>,
-	): HermisService<TName, TInstance>;
+		serviceDiscovery: HermodServiceDiscovery<any>,
+	): HermodService<TName, TInstance>;
 }
 
 // First, let's create a type to extract information from a service class
-type ExtractServiceInfo<T> = T extends HermisServiceConstructor<
+type ExtractServiceInfo<T> = T extends HermodServiceConstructor<
 	infer Name,
 	infer Instance
 >
@@ -137,7 +137,7 @@ type ExtractServiceInfo<T> = T extends HermisServiceConstructor<
 	: never;
 
 // Now let's create a type to build a record from an array of service classes
-export type HermisServiceRecord<T extends HermisServiceConstructor[]> = {
+export type HermodServiceRecord<T extends HermodServiceConstructor[]> = {
 	[K in Extract<ExtractServiceInfo<T[number]>['name'], string>]: Extract<
 		ExtractServiceInfo<T[number]>,
 		{ name: K }

@@ -12,9 +12,7 @@
     "registry": "https://npm.jsr.io",
     "access": "restricted"
   },
-  "bin": {
-    "hermes": "./bin/hermes.ts"
-  },
+
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -23,7 +21,7 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@asgard/hermes": "workspace:*",
+    "@asgard/hermod": "workspace:*",
     "@standard-schema/spec": "~1.0.0",
     "stoker": "~1.4.2"
   },

@@ -23,9 +23,9 @@ importers:
 
   packages/heimdall:
     dependencies:
-      '@asgard/hermes':
+      '@asgard/hermod':
         specifier: workspace:*
-        version: link:../hermes
+        version: link:../hermod
       '@standard-schema/spec':
         specifier: ~1.0.0
         version: 1.0.0
@@ -40,7 +40,7 @@ importers:
         specifier: ~3.24.2
         version: 3.24.2
 
-  packages/hermes:
+  packages/hermod:
     devDependencies:
       vitest:
         specifier: ~3.1.1

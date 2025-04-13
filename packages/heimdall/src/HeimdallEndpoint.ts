@@ -1,18 +1,19 @@
 import type {
-	HermisServiceConstructor,
-	HermisServiceRecord,
-	HermisServiceDiscovery,
-} from '@asgard/hermes';
+	HermodServiceConstructor,
+	HermodServiceRecord,
+	HermodServiceDiscovery,
+} from '@asgard/hermod';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import type * as HttpStatusCodes from 'stoker/http-status-codes';
 
 export class HeimdallEndpoint<
+	TPath extends string,
 	TBody extends StandardSchemaV1 | undefined = undefined,
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 	TSearch extends StandardSchemaV1 | undefined = undefined,
 	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermisServiceConstructor[] = [],
+	TServices extends HermodServiceConstructor[] = [],
 > {
 	/**
 	 *
@@ -22,10 +23,13 @@ export class HeimdallEndpoint<
 	private _search: TSearch;
 	private _response: TResponse;
 
+	readonly path: string;
+
 	private _services: TServices;
 
 	constructor(
 		options: HeimdallEndpointOptions<
+			TPath,
 			TBody,
 			TResponse,
 			TSearch,
@@ -94,13 +98,13 @@ export type HeimdallEndpointHandlerInput<
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 	TSearch extends StandardSchemaV1 | undefined = undefined,
 	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermisServiceConstructor[] = [],
+	TServices extends HermodServiceConstructor[] = [],
 > = {
 	body: HeimdallEndpointValidationOutput<TBody>;
 	response: HeimdallEndpointValidationOutput<TResponse>;
 	search: HeimdallEndpointValidationOutput<TSearch>;
 	params: HeimdallEndpointValidationOutput<TParams>;
-	services: HermisServiceRecord<TServices>;
+	services: HermodServiceRecord<TServices>;
 };
 
 export type HeimdallEndpointHandler<
@@ -108,7 +112,7 @@ export type HeimdallEndpointHandler<
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 	TSearch extends StandardSchemaV1 | undefined = undefined,
 	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermisServiceConstructor[] = [],
+	TServices extends HermodServiceConstructor[] = [],
 > = (
 	input: HeimdallEndpointHandlerInput<
 		TBody,
@@ -119,13 +123,24 @@ export type HeimdallEndpointHandler<
 	>,
 ) => Promise<HeimdallEndpointResponse<TResponse>>;
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
 export type HeimdallEndpointOptions<
+	TPath extends string,
 	TBody extends StandardSchemaV1 | undefined = undefined,
 	TResponse extends StandardSchemaV1 | undefined = undefined,
 	TSearch extends StandardSchemaV1 | undefined = undefined,
 	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermisServiceConstructor[] = [],
+	TServices extends HermodServiceConstructor[] = [],
 > = {
+	/**
+	 * The endpoint path.
+	 */
+	path: TPath;
+	/**
+	 * The HTTP method.
+	 */
+	method: HttpMethod;
 	/**
 	 * The request body schema.
 	 */

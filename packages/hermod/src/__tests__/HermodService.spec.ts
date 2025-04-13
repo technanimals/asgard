@@ -1,16 +1,16 @@
-import { HermisServiceDiscovery } from '../HermisService';
+import { HermodServiceDiscovery } from '../HermodService';
 import { describe, it, expect } from 'vitest';
 
-describe('HermisServiceDiscovery', () => {
+describe('HermodServiceDiscovery', () => {
 	it('should be a singleton', () => {
-		const instance1 = HermisServiceDiscovery.getInstance();
-		const instance2 = HermisServiceDiscovery.getInstance();
+		const instance1 = HermodServiceDiscovery.getInstance();
+		const instance2 = HermodServiceDiscovery.getInstance();
 
 		expect(instance1).toBe(instance2);
 	});
 
 	it('should add and retrieve a service', async () => {
-		const discovery = HermisServiceDiscovery.getInstance<{
+		const discovery = HermodServiceDiscovery.getInstance<{
 			testService: string;
 		}>();
 		const mockService = {
@@ -26,7 +26,7 @@ describe('HermisServiceDiscovery', () => {
 
 	it('should throw an error if service not found', async () => {
 		const discovery =
-			HermisServiceDiscovery.getInstance<Record<string, unknown>>();
+			HermodServiceDiscovery.getInstance<Record<string, unknown>>();
 
 		await expect(discovery.get('nonExistentService')).rejects.toThrow(
 			"Service 'nonExistentService' not found in service discovery",
@@ -34,7 +34,7 @@ describe('HermisServiceDiscovery', () => {
 	});
 
 	it('should retrieve multiple services', async () => {
-		const discovery = HermisServiceDiscovery.getInstance<{
+		const discovery = HermodServiceDiscovery.getInstance<{
 			serviceA: string;
 			serviceB: number;
 		}>();
