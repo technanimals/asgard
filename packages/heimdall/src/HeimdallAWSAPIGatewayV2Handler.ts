@@ -2,6 +2,7 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type {
 	HeimdallEndpoint,
 	HeimdallEndpointHandlerInput,
+	HeimdallEndpointValidationOutput,
 	HeimdallPath,
 } from './HeimdallEndpoint';
 import {
@@ -43,28 +44,41 @@ export class HeimdallAWSAPIGatewayV2Handler<
 		return this.endpoint.execute(e);
 	}
 
-	handler = middy(this._handler.bind(this)).use({
-		before: async (request) => {
-			const {
-				body,
-				pathParameters = {},
-				queryStringParameters = {},
-			} = request.event;
+	handler: APIGatewayV2Handler<HeimdallEndpointValidationOutput<TResponse>> =
+		middy(this._handler.bind(this)).use({
+			before: async (request) => {
+				const {
+					body,
+					pathParameters = {},
+					queryStringParameters = {},
+				} = request.event;
 
-			const serviceDiscovery = HermodServiceDiscovery.getInstance();
+				const serviceDiscovery = HermodServiceDiscovery.getInstance();
 
-			const services = await serviceDiscovery.register(this.endpoint.services);
+				const services = await serviceDiscovery.register(
+					this.endpoint.services,
+				);
 
-			request.event.data = await this.endpoint.body(body);
-			request.event.params = await this.endpoint.params(pathParameters);
-			request.event.search = await this.endpoint.search(queryStringParameters);
-			request.event.services = services;
-		},
-		after: async (request) => {
-			const { response } = request.event;
-			if (response) {
-				request.response = await this.endpoint.response(response);
-			}
-		},
-	});
+				request.event.data = await this.endpoint.body(body);
+				request.event.params = await this.endpoint.params(pathParameters);
+				request.event.search = await this.endpoint.search(
+					queryStringParameters,
+				);
+				request.event.services = services;
+			},
+			after: async (request) => {
+				const { response } = request.event;
+				if (response) {
+					request.response = await this.endpoint.response(response);
+				}
+			},
+		}) as unknown as APIGatewayV2Handler<
+			HeimdallEndpointValidationOutput<TResponse>
+		>;
 }
+
+export type APIGatewayV2Handler<TResponse> = (a: {
+	pathParameters?: Record<string, string>;
+	queryStringParameters?: Record<string, string>;
+	body?: string;
+}) => Promise<TResponse>;
