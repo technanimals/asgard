@@ -1,5 +1,5 @@
 {
-  "name": "@asgard/hermes",
+  "name": "@asgard/hermod",
   "version": "0.0.3",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -13,7 +13,7 @@
     "access": "restricted"
   },
   "bin": {
-    "hermes": "./bin/hermes.ts"
+    "hermod": "./bin/hermod.ts"
   },
   "type": "module",
   "license": "MIT",

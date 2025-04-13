@@ -1,28 +1,28 @@
-# @asgard/hermes
+# @asgard/hermod
 
 A TypeScript service discovery library for your application architecture.
 
-[![JSR Score](https://img.shields.io/jsr/v/@asgard/hermes)](https://jsr.io/@asgard/hermes)
+[![JSR Score](https://img.shields.io/jsr/v/@asgard/hermod)](https://jsr.io/@asgard/hermod)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-`@asgard/hermes` is a lightweight, type-safe service discovery library for TypeScript applications. Named after Hermes, the messenger of the Greek gods, this package facilitates communication between different services in your application, making it simple to register, discover, and consume services with full type safety.
+`@asgard/hermod` is a lightweight, type-safe service discovery library for TypeScript applications. Named after hermod, the messenger of the Greek gods, this package facilitates communication between different services in your application, making it simple to register, discover, and consume services with full type safety.
 
 ## Installation
 
 ```bash
 # Using npm
-npm install @asgard/hermes
+npm install @asgard/hermod
 
 # Using pnpm
-pnpm add @asgard/hermes
+pnpm add @asgard/hermod
 
 # Using yarn
-yarn add @asgard/hermes
+yarn add @asgard/hermod
 
 # Using JSR
-npx jsr add @asgard/hermes
+npx jsr add @asgard/hermod
 ```
 ## Key Features
 
@@ -38,7 +38,7 @@ npx jsr add @asgard/hermes
   import { 
     HermisServiceDiscovery, 
     HermisService 
-  } from '@asgard/hermes';
+  } from '@asgard/hermod';
 
   // Define your service types
   interface Services {
