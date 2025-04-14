@@ -80,9 +80,12 @@ export class HeimdallHonoServer<
 
           const result = await endpoint.response(response);
 
-          // deno-lint-ignore ban-ts-comment
-          // @ts-ignore
-          return c.json(result.body, response.statusCode);
+          return c.json(
+            result.body,
+            // deno-lint-ignore ban-ts-comment
+            // @ts-ignore
+            response.statusCode,
+          );
         },
       );
     });

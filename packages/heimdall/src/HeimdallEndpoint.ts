@@ -14,20 +14,53 @@ export class HeimdallEndpoint<
   TParams extends StandardSchemaV1 | undefined = undefined,
   TServices extends HermodServiceConstructor[] = [],
 > {
-  // deno-lint-ignore no-explicit-any
-  static isErrorResponse<T extends HeimdallEndpointResponse<any>>(
-    response: T,
-    // deno-lint-ignore ban-ts-comment
-    // @ts-ignore
-  ): response is HeimdallEndpointErrorResponse {
+  static isResponse(
+    response: unknown,
+  ): response is HeimdallEndpointResponse {
+    if (
+      !response || typeof response !== "object" || !("statusCode" in response)
+    ) {
+      return false;
+    }
+
     const statusCode = Number(response.statusCode);
-    return (
+    if (statusCode < 200 || statusCode >= 600) {
+      return false;
+    }
+
+    return true;
+    // &&
+    //   response.body &&
+    //   ("message" in response.body &&
+    //     typeof response.body.message === "string"),
+    // );
+  }
+
+  static isErrorResponse(
+    response: unknown,
+  ): response is HeimdallEndpointErrorResponse {
+    if (!HeimdallEndpoint.isResponse(response)) {
+      return false;
+    }
+
+    const statusCode = Number(response.statusCode);
+    return Boolean(
       statusCode >= 400 &&
-      statusCode < 600
+        statusCode < 600 &&
+        ("body" in response && typeof response.body === "object") &&
+        response.body &&
+        ("message" in response.body &&
+          typeof response.body.message === "string"),
     );
   }
 
-  static isSuccessResponse<T extends HttpResponse>(response: T): boolean {
+  static isSuccessResponse(
+    response: unknown,
+  ): response is HeimdallEndpointSuccessResponse {
+    if (!HeimdallEndpoint.isResponse(response)) {
+      return false;
+    }
+
     const statusCode = Number(response.statusCode);
     return (
       statusCode >= 200 &&
