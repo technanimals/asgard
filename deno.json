@@ -1,7 +1,13 @@
 {
-	"workspace": ["./packages/heimdall", "./packages/hermod"],
-	"imports": {
-		"@biomejs/biome": "npm:@biomejs/biome",
-		"@std/assert": "jsr:@std/assert"
-	}
+  "workspace": [
+    "./packages/heimdall",
+    "./packages/hermod",
+    "./examples/heimdall"
+  ],
+  "imports": {
+    "@std/assert": "jsr:@std/assert",
+    "zod": "npm:zod@^3.24.2",
+    "hono": "npm:hono",
+    "hono-openapi": "npm:hono-openapi"
+  }
 }

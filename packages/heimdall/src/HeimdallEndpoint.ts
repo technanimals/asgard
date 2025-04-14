@@ -1,225 +1,246 @@
 import type {
-	HermodServiceConstructor,
-	HermodServiceRecord,
-} from '@asgard/hermod';
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+  HermodServiceConstructor,
+  HermodServiceRecord,
+} from "@asgard/hermod";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 
-import type * as HttpStatusCodes from 'stoker/http-status-codes';
+import type * as HttpStatusCodes from "stoker/http-status-codes";
 
 export class HeimdallEndpoint<
-	TPath extends HeimdallPath,
-	TBody extends StandardSchemaV1 | undefined = undefined,
-	TResponse extends StandardSchemaV1 | undefined = undefined,
-	TSearch extends StandardSchemaV1 | undefined = undefined,
-	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermodServiceConstructor[] = [],
+  TPath extends HeimdallPath,
+  TBody extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
+  TSearch extends StandardSchemaV1 | undefined = undefined,
+  TParams extends StandardSchemaV1 | undefined = undefined,
+  TServices extends HermodServiceConstructor[] = [],
 > {
-	/**
-	 *
-	 */
-	private _params: TParams;
-	private _body: TBody;
-	private _search: TSearch;
-	private _response: TResponse;
+  // deno-lint-ignore no-explicit-any
+  static isErrorResponse<T extends HeimdallEndpointResponse<any>>(
+    response: T,
+    // deno-lint-ignore ban-ts-comment
+    // @ts-ignore
+  ): response is HeimdallEndpointErrorResponse {
+    const statusCode = Number(response.statusCode);
+    return (
+      statusCode >= 400 &&
+      statusCode < 600
+    );
+  }
 
-	readonly path: HeimdallPath;
-	readonly method: HttpMethod;
+  static isSuccessResponse<T extends HttpResponse>(response: T) {
+    const statusCode = Number(response.statusCode);
+    return (
+      statusCode >= 200 &&
+      statusCode < 300
+    );
+  }
 
-	readonly services: TServices;
+  readonly paramsSchema: TParams;
+  readonly bodySchema: TBody;
+  readonly searchSchema: TSearch;
+  readonly responseSchema: TResponse;
 
-	execute: HeimdallEndpointHandler<
-		TBody,
-		TResponse,
-		TSearch,
-		TParams,
-		TServices
-	>;
+  readonly path: HeimdallPath;
+  readonly method: HttpMethod;
+  readonly description: string;
+  readonly tags: string[];
 
-	constructor(
-		options: HeimdallEndpointOptions<
-			TPath,
-			TBody,
-			TResponse,
-			TSearch,
-			TParams,
-			TServices
-		>,
-	) {
-		this._params = options.params as TParams;
-		this._body = options.body as TBody;
-		this._search = options.body as TSearch;
-		this._response = options.response as TResponse;
-		this.services = options.services || [];
-		this.path = options.path;
-		this.method = options.method;
+  readonly services: TServices;
 
-		this.execute = options.handler;
-	}
+  execute: HeimdallEndpointHandler<
+    TBody,
+    TResponse,
+    TSearch,
+    TParams,
+    TServices
+  >;
 
-	get route(): HeimdallRoute<TPath, HttpMethod> {
-		return `${this.method} ${this.path}` as HeimdallRoute<TPath, HttpMethod>;
-	}
+  constructor(
+    options: HeimdallEndpointOptions<
+      TPath,
+      TBody,
+      TResponse,
+      TSearch,
+      TParams,
+      TServices
+    >,
+  ) {
+    this.paramsSchema = options.params as TParams;
+    this.bodySchema = options.body as TBody;
+    this.searchSchema = options.body as TSearch;
+    this.responseSchema = options.response as TResponse;
+    this.services = options.services || [];
+    this.path = options.path;
+    this.method = options.method;
 
-	private async parse<T extends StandardSchemaV1 | undefined = undefined>(
-		schema: T,
-		data: unknown,
-	) {
-		const response = await schema?.['~standard'].validate(data);
+    this.execute = options.handler;
+    this.description = options.description || "";
+    this.tags = options.tags || [];
+  }
 
-		if (response?.issues) {
-			throw response.issues;
-		}
+  get route(): HeimdallRoute<TPath, HttpMethod> {
+    return `${this.method} ${this.path}` as HeimdallRoute<TPath, HttpMethod>;
+  }
 
-		return response?.value as HeimdallEndpointValidationOutput<TParams>;
-	}
+  private async parse<T extends StandardSchemaV1 | undefined = undefined>(
+    schema: T,
+    data: unknown,
+  ): Promise<HeimdallEndpointValidationOutput<T>> {
+    const response = await schema?.["~standard"].validate(data);
 
-	async params(
-		data: unknown,
-	): Promise<HeimdallEndpointValidationOutput<TParams>> {
-		return this.parse(this._params, data);
-	}
+    if (response?.issues) {
+      throw response.issues;
+    }
 
-	async body(data: unknown): Promise<HeimdallEndpointValidationOutput<TBody>> {
-		return this.parse(
-			this._body,
-			data,
-		) as HeimdallEndpointValidationOutput<TBody>;
-	}
+    return response?.value as HeimdallEndpointValidationOutput<T>;
+  }
 
-	async search(
-		data: unknown,
-	): Promise<HeimdallEndpointValidationOutput<TSearch>> {
-		return this.parse(
-			this._search,
-			data,
-		) as HeimdallEndpointValidationOutput<TSearch>;
-	}
+  params(data: unknown): Promise<HeimdallEndpointValidationOutput<TParams>> {
+    return this.parse(this.paramsSchema, data);
+  }
 
-	async response(
-		data: unknown,
-	): Promise<HeimdallEndpointValidationOutput<TResponse>> {
-		return this.parse(
-			this._response,
-			data,
-		) as HeimdallEndpointValidationOutput<TResponse>;
-	}
+  body(data: unknown): Promise<HeimdallEndpointValidationOutput<TBody>> {
+    return this.parse(this.bodySchema, data);
+  }
+
+  search(data: unknown): Promise<HeimdallEndpointValidationOutput<TSearch>> {
+    return this.parse(this.searchSchema, data);
+  }
+
+  async response<T extends HeimdallEndpointResponse<TResponse>>(
+    data: T,
+  ) {
+    if (HeimdallEndpoint.isErrorResponse(data)) {
+      return data;
+    }
+
+    return {
+      statusCode: data.statusCode,
+      body: await this.parse(this.responseSchema, data.body),
+    };
+  }
 }
 
 export type HeimdallEndpointValidationOutput<
-	T extends StandardSchemaV1 | undefined,
+  T extends StandardSchemaV1 | undefined,
 > = T extends StandardSchemaV1 ? StandardSchemaV1.InferOutput<T> : undefined;
 
 export type HeimdallEndpointHandlerInput<
-	TBody extends StandardSchemaV1 | undefined = undefined,
-	TResponse extends StandardSchemaV1 | undefined = undefined,
-	TSearch extends StandardSchemaV1 | undefined = undefined,
-	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermodServiceConstructor[] = [],
+  TBody extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
+  TSearch extends StandardSchemaV1 | undefined = undefined,
+  TParams extends StandardSchemaV1 | undefined = undefined,
+  TServices extends HermodServiceConstructor[] = [],
 > = {
-	data: HeimdallEndpointValidationOutput<TBody>;
-	response: HeimdallEndpointValidationOutput<TResponse>;
-	search: HeimdallEndpointValidationOutput<TSearch>;
-	params: HeimdallEndpointValidationOutput<TParams>;
-	services: HermodServiceRecord<TServices>;
+  data: HeimdallEndpointValidationOutput<TBody>;
+  search: HeimdallEndpointValidationOutput<TSearch>;
+  params: HeimdallEndpointValidationOutput<TParams>;
+  services: HermodServiceRecord<TServices>;
 };
 
 export type HeimdallEndpointHandler<
-	TBody extends StandardSchemaV1 | undefined = undefined,
-	TResponse extends StandardSchemaV1 | undefined = undefined,
-	TSearch extends StandardSchemaV1 | undefined = undefined,
-	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermodServiceConstructor[] = [],
+  TBody extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
+  TSearch extends StandardSchemaV1 | undefined = undefined,
+  TParams extends StandardSchemaV1 | undefined = undefined,
+  TServices extends HermodServiceConstructor[] = [],
 > = (
-	input: HeimdallEndpointHandlerInput<
-		TBody,
-		TResponse,
-		TSearch,
-		TParams,
-		TServices
-	>,
+  input: HeimdallEndpointHandlerInput<
+    TBody,
+    TResponse,
+    TSearch,
+    TParams,
+    TServices
+  >,
 ) => Promise<HeimdallEndpointResponse<TResponse>>;
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 export type HeimdallEndpointOptions<
-	TPath extends string,
-	TBody extends StandardSchemaV1 | undefined = undefined,
-	TResponse extends StandardSchemaV1 | undefined = undefined,
-	TSearch extends StandardSchemaV1 | undefined = undefined,
-	TParams extends StandardSchemaV1 | undefined = undefined,
-	TServices extends HermodServiceConstructor[] = [],
+  TPath extends string,
+  TBody extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
+  TSearch extends StandardSchemaV1 | undefined = undefined,
+  TParams extends StandardSchemaV1 | undefined = undefined,
+  TServices extends HermodServiceConstructor[] = [],
 > = {
-	/**
-	 * The endpoint path.
-	 */
-	path: TPath;
-	/**
-	 * The HTTP method.
-	 */
-	method: HttpMethod;
-	/**
-	 * The request body schema.
-	 */
-	body?: TBody;
-	/**
-	 * The response body schema.
-	 */
-	response?: TResponse;
-	/**
-	 * The search query schema.
-	 */
-	search?: TSearch;
-	/**
-	 * The params schema.
-	 */
-	params?: TParams;
-	/**
-	 * The services to use.
-	 */
-	services: TServices;
-	/**
-	 * The handler function.
-	 */
-	handler: HeimdallEndpointHandler<
-		TBody,
-		TResponse,
-		TSearch,
-		TParams,
-		TServices
-	>;
+  description?: string;
+  tags?: string[];
+  /**
+   * The endpoint path.
+   */
+  path: TPath;
+  /**
+   * The HTTP method.
+   */
+  method: HttpMethod;
+  /**
+   * The request body schema.
+   */
+  body?: TBody;
+  /**
+   * The response body schema.
+   */
+  response?: TResponse;
+  /**
+   * The search query schema.
+   */
+  search?: TSearch;
+  /**
+   * The params schema.
+   */
+  params?: TParams;
+  /**
+   * The services to use.
+   */
+  services: TServices;
+  /**
+   * The handler function.
+   */
+  handler: HeimdallEndpointHandler<
+    TBody,
+    TResponse,
+    TSearch,
+    TParams,
+    TServices
+  >;
 };
 
-type StatusCode = typeof HttpStatusCodes;
+export type StatusCode = typeof HttpStatusCodes;
 
 export type SuccessStatusCode =
-	| StatusCode['OK']
-	| StatusCode['CREATED']
-	| StatusCode['ACCEPTED']
-	| StatusCode['NO_CONTENT'];
+  | StatusCode["OK"]
+  | StatusCode["CREATED"]
+  | StatusCode["ACCEPTED"]
+  | StatusCode["NO_CONTENT"];
 
 export type ErrorStatusCode = Omit<StatusCode, SuccessStatusCode>;
 
 export type HeimdallEndpointSuccessResponse<
-	TResponse extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
 > = {
-	statusCode: SuccessStatusCode;
-	body: HeimdallEndpointValidationOutput<TResponse>;
+  statusCode: SuccessStatusCode;
+  body: HeimdallEndpointValidationOutput<TResponse>;
 };
 
 export type HeimdallEndpointErrorResponse = {
-	statusCode: ErrorStatusCode;
-	body: {
-		message: string;
-	};
+  statusCode: ErrorStatusCode;
+  body: {
+    message: string;
+  };
 };
 
 export type HeimdallEndpointResponse<
-	TResponse extends StandardSchemaV1 | undefined = undefined,
+  TResponse extends StandardSchemaV1 | undefined = undefined,
 > = HeimdallEndpointSuccessResponse<TResponse> | HeimdallEndpointErrorResponse;
 
 export type HeimdallPath = `/${string}`;
 
 export type HeimdallRoute<
-	TPath extends HeimdallPath,
-	TMethod extends HttpMethod,
+  TPath extends HeimdallPath,
+  TMethod extends HttpMethod = HttpMethod,
 > = `${TMethod} ${TPath}`;
+
+export type HttpResponse = {
+  statusCode: StatusCode;
+};
