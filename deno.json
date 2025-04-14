@@ -8,6 +8,8 @@
     "@std/assert": "jsr:@std/assert",
     "zod": "npm:zod@^3.24.2",
     "hono": "npm:hono",
-    "hono-openapi": "npm:hono-openapi"
+    "hono-openapi": "npm:hono-openapi",
+    "@hono/zod-validator": "npm:@hono/zod-validator",
+    "zod-openapi": "npm:zod-openapi"
   }
 }

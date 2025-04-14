@@ -1,1 +1,4 @@
-export { HeimdallHonoServer } from "./HeimdallHonoServer.ts";
+export {
+  HeimdallHonoServer,
+  type HeimdallSchemaResolver,
+} from "./HeimdallHonoServer.ts";

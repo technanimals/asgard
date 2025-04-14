@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
 import { describeRoute, openAPISpecs, type ResolverResult } from "hono-openapi";
-import {} from "hono-openapi/zod";
+
 import {
   type HermodServiceConstructor,
   HermodServiceDiscovery,
@@ -14,6 +14,7 @@ export class HeimdallHonoServer<
 > {
   static async createServer<
     TServices extends HermodServiceConstructor[],
+    TSchemaResolver extends HeimdallSchemaResolver<unknown>,
   >(
     {
       endpoints,
@@ -23,7 +24,7 @@ export class HeimdallHonoServer<
       description = "Heimdall Hono Server",
       version = "1.0.0",
       resolver,
-    }: HeimdallHonoServerOptions<TServices>,
+    }: HeimdallHonoServerOptions<TServices, TSchemaResolver>,
   ) {
     const serviceDiscovery = HermodServiceDiscovery.getInstance();
     const services = await serviceDiscovery.register(serviceConstructors);
@@ -36,6 +37,13 @@ export class HeimdallHonoServer<
         | "delete"
         | "options";
 
+      const content = endpoint.responseSchema
+        ? {
+          "application/json": {
+            schema: resolver(endpoint.responseSchema),
+          },
+        }
+        : undefined;
       app[method](
         endpoint.path,
         describeRoute({
@@ -44,11 +52,7 @@ export class HeimdallHonoServer<
           responses: {
             200: {
               description: "Successful response",
-              content: {
-                "application/json": {
-                  schema: resolver(endpoint.bodySchema),
-                },
-              },
+              content,
             },
           },
         }),
@@ -78,7 +82,7 @@ export class HeimdallHonoServer<
 
           // deno-lint-ignore ban-ts-comment
           // @ts-ignore
-          return c.json(result, response.statusCode);
+          return c.json(result.body, response.statusCode);
         },
       );
     });
@@ -121,7 +125,7 @@ export class HeimdallHonoServer<
 
 export interface HeimdallHonoServerOptions<
   TServices extends HermodServiceConstructor[],
-  TSchemaVendor = unknown,
+  TSchemaResolver extends HeimdallSchemaResolver<unknown>,
 > {
   app?: Hono;
   name?: string;
@@ -129,7 +133,7 @@ export interface HeimdallHonoServerOptions<
   version?: string;
   endpoints: HeimdallEndpoint<HeimdallPath>[];
   services: TServices;
-  resolver: HeimdallSchemaResolver<TSchemaVendor>;
+  resolver: TSchemaResolver;
 }
 
 export type HeimdallSchemaResolver<T> = (schema: T) => ResolverResult;

@@ -1,5 +1,6 @@
 import { HeimdallEndpoint } from "@asgard/heimdall";
-import z from "npm:zod@^3.24.2";
+import z from "zod";
+import { LoggerService, UserService } from "./services.ts";
 
 export const getUser = new HeimdallEndpoint({
   path: "/users",
@@ -7,14 +8,19 @@ export const getUser = new HeimdallEndpoint({
   description: "Get all users",
   tags: ["users"],
   response: z.object({
-    users: z.string().array(),
+    users: z.object({
+      id: z.number(),
+      name: z.string(),
+    }).array(),
   }),
-  services: [],
-  handler: () => {
+  services: [LoggerService, UserService],
+  handler: ({ services }) => {
+    services.logger.log("Get all users");
+    const user = services.user.getUser();
     return Promise.resolve({
       statusCode: 200,
       body: {
-        users: ["user1", "user2", "user3"],
+        users: [user],
       },
     });
   },
