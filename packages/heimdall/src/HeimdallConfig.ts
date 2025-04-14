@@ -85,7 +85,7 @@ export interface HeimdallConfigOptions {
   root: string;
 }
 
-export function defineConfig(options: DefineConfigOptions) {
+export function defineConfig(options: DefineConfigOptions): HeimdallConfig {
   const { routes = [] } = options;
   const root = process.cwd();
 

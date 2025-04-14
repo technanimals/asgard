@@ -13,9 +13,8 @@ export const getUser = new HeimdallEndpoint({
       name: z.string(),
     }).array(),
   }),
-  services: [LoggerService, UserService],
+  services: [UserService],
   handler: ({ services }) => {
-    services.logger.log("Get all users");
     const user = services.user.getUser();
     return Promise.resolve({
       statusCode: 200,

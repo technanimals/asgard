@@ -27,7 +27,7 @@ export class HeimdallEndpoint<
     );
   }
 
-  static isSuccessResponse<T extends HttpResponse>(response: T) {
+  static isSuccessResponse<T extends HttpResponse>(response: T): boolean {
     const statusCode = Number(response.statusCode);
     return (
       statusCode >= 200 &&
@@ -109,7 +109,7 @@ export class HeimdallEndpoint<
 
   async response<T extends HeimdallEndpointResponse<TResponse>>(
     data: T,
-  ) {
+  ): Promise<HeimdallEndpointResponse<TResponse>> {
     if (HeimdallEndpoint.isErrorResponse(data)) {
       return data;
     }

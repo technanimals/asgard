@@ -25,7 +25,7 @@ export class HeimdallHonoServer<
       version = "1.0.0",
       resolver,
     }: HeimdallHonoServerOptions<TServices, TSchemaResolver>,
-  ) {
+  ): Promise<HeimdallHonoServer<TServices>> {
     const serviceDiscovery = HermodServiceDiscovery.getInstance();
     const services = await serviceDiscovery.register(serviceConstructors);
 
