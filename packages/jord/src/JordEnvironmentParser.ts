@@ -6,7 +6,10 @@ export class JordConfigParser<TResponse extends EmptyObject> {
   constructor(
     private readonly config: TResponse,
   ) {}
-
+  /**
+   * Parses the config object and validates it against the Zod schemas
+   * @returns The parsed config object
+   */
   parse(): JordInferConfig<TResponse> {
     const parsedConfig: EmptyObject = {};
     const errors: z.z.core.$ZodIssue[] = [];
@@ -44,7 +47,7 @@ export class JordConfigParser<TResponse extends EmptyObject> {
 export class JordEnvironmentParser<T extends EmptyObject> {
   constructor(private readonly config: T) {}
 
-  getZodGetter = (name: string) => {
+  private getZodGetter = (name: string) => {
     // Return an object that has all Zod schemas but with our wrapper
     return new Proxy(z, {
       get: (target, prop) => {
@@ -76,7 +79,12 @@ export class JordEnvironmentParser<T extends EmptyObject> {
       },
     });
   };
-
+  /**
+   * Creates a new JordConfigParser object that can be used to parse the config object
+   *
+   * @param builder - A function that takes a getter function and returns a config object
+   * @returns A JordConfigParser object that can be used to parse the config object
+   */
   create<TReturn extends EmptyObject>(
     builder: (get: JordEnvFetcher) => TReturn,
   ): JordConfigParser<TReturn> {
