@@ -14,6 +14,19 @@ export class HeimdallEndpoint<
   TParams extends StandardSchemaV1 | undefined = undefined,
   TServices extends HermodServiceConstructor[] = [],
 > {
+  _handlerPath?: HandlerPath;
+
+  get handlerPath() {
+    if (!this._handlerPath) {
+      throw `${this.route} does not have a handler path. Please set it manually.`;
+    }
+
+    const [p, method] = this._handlerPath.split("#");
+    const [path] = p.split(".");
+
+    return `${path}.${method}`;
+  }
+
   private readonly noopAuthorizer: HeimdallEndpointAuthorizer<
     TBody,
     TSearch,
@@ -436,3 +449,5 @@ export type HeimdallRoute<
 export type HttpResponse = {
   statusCode: StatusCode;
 };
+
+export type HandlerPath = `${string}#${string}`;

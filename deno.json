@@ -8,9 +8,11 @@
   "imports": {
     "@std/assert": "jsr:@std/assert",
     "@types/lodash.get": "npm:@types/lodash.get@^4.4.9",
+    "@types/lodash.groupby": "npm:@types/lodash.groupby@^4.6.9",
     "@types/lodash.set": "npm:@types/lodash.set@^4.3.9",
     "@zod/mini": "npm:@zod/mini@^4.0.0-beta.20250414T061543",
     "lodash.get": "npm:lodash.get@^4.4.2",
+    "lodash.groupby": "npm:lodash.groupby@^4.6.0",
     "lodash.set": "npm:lodash.set@^4.3.2",
     "zod": "npm:zod@^3.24.2",
     "hono": "npm:hono",

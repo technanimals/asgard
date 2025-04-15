@@ -7,6 +7,10 @@ import {
   type HeimdallRoute,
 } from "./HeimdallEndpoint.ts";
 
+import fs from "node:fs/promises";
+
+import groupBy from "lodash.groupby";
+
 export class HeimdallConfig {
   private routes: Pattern[];
   private root: string;
@@ -29,6 +33,61 @@ export class HeimdallConfig {
     return r.toLowerCase();
   }
 
+  static async createAWSHandlersFromEndpoints<TPath extends HeimdallPath>(
+    endpoints: HeimdallEndpoint<TPath>[],
+  ): Promise<Handler[]> {
+    const groupedEndpoints = groupBy(
+      endpoints,
+      (endpoint) => endpoint._handlerPath?.split("#")[0],
+    );
+
+    const handlers: Handler[] = [];
+    const projectRoot = await HeimdallConfig.getProjectRoot(process.cwd());
+
+    const groupedEndpointsKeys = Object.keys(groupedEndpoints);
+
+    for await (const group of groupedEndpointsKeys) {
+      const relativePath = path.relative(
+        projectRoot,
+        group,
+      );
+      const groupEndpoints = groupedEndpoints[group];
+      const parts = group.split("/");
+      const file = parts.pop() || "";
+      const [name, ext] = file.split(".");
+      const newFileName = `${name}.aws.${ext}`;
+      const newFilePath = [...parts, newFileName].join("/");
+      const imports = groupEndpoints.map((endpoint) => {
+        const name = endpoint._handlerPath?.split("#")[1] as string;
+
+        return {
+          name,
+          handler: relativePath.replace(`.${ext}`, `.${name}AWSHandler`),
+          route: endpoint.route.replace(
+            /\[([^\]]+)\]/g,
+            "{$1}",
+          ).replace(/:([\w\d_-]+)/g, "{$1}") as HeimdallRoute<HeimdallPath>,
+        };
+      });
+
+      handlers.push(...imports);
+
+      const names = imports.map((endpoint) => endpoint.name);
+      const fileContent = [
+        'import { HeimdallAWSAPIGatewayV2Handler } from "@asgard/heimdall/aws"',
+        `import { ${names.join(", ")} } from "./${file}"`,
+        "",
+        names.map((endpoint) => {
+          return `export const ${endpoint}AWSHandler = new HeimdallAWSAPIGatewayV2Handler(${endpoint}).handler;`;
+        }).join("\n"),
+      ];
+
+      await fs.writeFile(newFilePath, fileContent.join("\n"));
+    }
+
+    return handlers;
+  }
+
   private async getEndpointFromFile(f: string) {
     const file = await import(f);
 
@@ -39,6 +98,9 @@ export class HeimdallConfig {
         const fileExport = file[e];
 
         if ((fileExport instanceof HeimdallEndpoint)) {
+          // const relativePath = path.relative(root, f);
+
+          fileExport._handlerPath = `${f}#${e}`;
           acc.push(fileExport);
         }
 
@@ -46,6 +108,30 @@ export class HeimdallConfig {
       },
       [],
     );
+  }
+
+  static async getProjectRoot(cwd: string): Promise<string> {
+    if (cwd === "/") {
+      return cwd;
+    }
+
+    const stream = fg.stream(
+      ["yarn.lock", "pnpm-lock.yaml", "package-lock.json", "deno.lock"],
+      { dot: true, cwd },
+    );
+
+    let isRoot = false;
+
+    for await (const _ of stream) {
+      isRoot = true;
+      break;
+    }
+
+    if (isRoot) {
+      return cwd;
+    }
+
+    return HeimdallConfig.getProjectRoot(path.resolve(cwd, ".."));
   }
   /**
    *  Retrieves all endpoints from the specified routes, all exports of instances of HeimdallEndpoint
@@ -57,6 +143,7 @@ export class HeimdallConfig {
     Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>
   > {
     const files = fg.stream(this.routes, { dot: true, cwd: this.root });
+
     const endpoints: Map<
       HeimdallRoute<HeimdallPath>,
       HeimdallEndpoint<HeimdallPath>
@@ -118,4 +205,10 @@ export function defineConfig(options: DefineConfigOptions): HeimdallConfig {
     routes,
     root,
   });
+}
+
+interface Handler {
+  name: string;
+  handler: string;
+  route: HeimdallRoute<HeimdallPath>;
 }

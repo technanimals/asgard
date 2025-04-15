@@ -6,8 +6,8 @@ import type {
   StatusCode,
 } from "./HeimdallEndpoint.ts";
 
-import type {
-  HermodServiceConstructor,
+import {
+  type HermodServiceConstructor,
   HermodServiceDiscovery,
 } from "@asgard/hermod";
 
@@ -32,7 +32,8 @@ export class HeimdallAWSAPIGatewayV2Handler<
       TParams,
       TServices
     >,
-    private readonly serviceDiscovery: HermodServiceDiscovery,
+    private readonly serviceDiscovery: HermodServiceDiscovery =
+      HermodServiceDiscovery.getInstance(),
   ) {}
 
   private _handler(

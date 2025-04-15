@@ -1,4 +1,5 @@
-import { defineConfig } from "@asgard/heimdall/config";
+import { defineConfig, HeimdallConfig } from "@asgard/heimdall/config";
+
 import { HeimdallHonoServer } from "@asgard/heimdall/hono";
 import { HermodServiceDiscovery } from "@asgard/hermod";
 
@@ -12,6 +13,7 @@ const config = defineConfig({
 const routes = await config.getEndpoints();
 
 const endpoints = Array.from(routes.values());
+
 const resolver = HeimdallHonoServer.createGenericResolver(zodResolver);
 
 const server = await HeimdallHonoServer.createServer({
@@ -20,5 +22,7 @@ const server = await HeimdallHonoServer.createServer({
   resolver,
   serviceDiscovery: HermodServiceDiscovery.getInstance(),
 });
+
+console.log(await HeimdallConfig.createAWSHandlersFromEndpoints(endpoints));
 
 Deno.serve(server.app.fetch);

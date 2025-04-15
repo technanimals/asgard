@@ -1,1 +1,1 @@
-export { defineConfig } from './HeimdallConfig.ts';
+export { defineConfig, HeimdallConfig } from "./HeimdallConfig.ts";

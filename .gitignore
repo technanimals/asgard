@@ -36,3 +36,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+*.aws.ts
+*.aws.js
+*.gcp.ts
+*.gcp.js
+*.azure.ts
+*.azure.js
