@@ -10,7 +10,13 @@ import {
 export class HeimdallConfig {
   private routes: Pattern[];
   private root: string;
-
+  /**
+   * Routifies a route by ensuring it starts with a `/` and ends without one.
+   * @example `user/profile` -> `/user/profile` and `user/profile/` -> `/user/profile`
+   *
+   * @param r - The route to routify.
+   * @returns - The routified route.
+   */
   static routify(r: string): string {
     if (!r.startsWith("/")) {
       return HeimdallConfig.routify(`/${r}`);
@@ -41,7 +47,12 @@ export class HeimdallConfig {
       [],
     );
   }
-
+  /**
+   *  Retrieves all endpoints from the specified routes, all exports of instances of HeimdallEndpoint
+   *  in the files matching the routes.
+   *
+   * @returns - A map of endpoints with their routes as keys.
+   */
   async getEndpoints(): Promise<
     Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>
   > {
@@ -77,14 +88,28 @@ export class HeimdallConfig {
 }
 
 export interface DefineConfigOptions {
+  /**
+   *  The routes to search for endpoints in the project.
+   */
   routes?: Pattern[];
 }
 
 export interface HeimdallConfigOptions {
+  /**
+   * The routes to search for endpoints in the project.
+   */
   routes: Pattern[];
+  /**
+   *  The root directory of the project.
+   */
   root: string;
 }
-
+/**
+ * Defines the Heimdall config.
+ *
+ * @param options - The options for the config.
+ * @returns The config object.
+ */
 export function defineConfig(options: DefineConfigOptions): HeimdallConfig {
   const { routes = [] } = options;
   const root = process.cwd();

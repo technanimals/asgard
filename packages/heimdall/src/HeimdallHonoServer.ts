@@ -12,11 +12,33 @@ import type { HeimdallEndpoint, HeimdallPath } from "./HeimdallEndpoint.ts";
 export class HeimdallHonoServer<
   TServices extends HermodServiceConstructor[] = [],
 > {
+  /**
+   * Creates a generic resolver function for the schema.
+   *
+   * @param resolver - The resolver function to use for the schema.
+   * @param schema - The schema to resolve.
+   * @returns
+   */
+  static createGenericResolver<S>(
+    //
+    // deno-lint-ignore no-explicit-any
+    resolver: (schema: any) => any,
+  ): HeimdallSchemaResolver<S> {
+    return (schema: S) => resolver(schema);
+  }
+  /**
+   * Creates a new Heimdall Hono server.
+   *
+   * @param options - The options for the server.
+   * @returns The server instance.
+   */
   static async createServer<
     TServices extends HermodServiceConstructor[],
     TSchemaResolver extends HeimdallSchemaResolver<unknown>,
   >(
-    {
+    options: HeimdallHonoServerOptions<TServices, TSchemaResolver>,
+  ): Promise<HeimdallHonoServer<TServices>> {
+    const {
       endpoints,
       app = new Hono(),
       services: serviceConstructors,
@@ -24,9 +46,9 @@ export class HeimdallHonoServer<
       description = "Heimdall Hono Server",
       version = "1.0.0",
       resolver,
-    }: HeimdallHonoServerOptions<TServices, TSchemaResolver>,
-  ): Promise<HeimdallHonoServer<TServices>> {
-    const serviceDiscovery = HermodServiceDiscovery.getInstance();
+      serviceDiscovery,
+    } = options;
+
     const services = await serviceDiscovery.register(serviceConstructors);
 
     endpoints.forEach((endpoint) => {
@@ -137,6 +159,7 @@ export interface HeimdallHonoServerOptions<
   endpoints: HeimdallEndpoint<HeimdallPath>[];
   services: TServices;
   resolver: TSchemaResolver;
+  serviceDiscovery: HermodServiceDiscovery;
 }
 
 export type HeimdallSchemaResolver<T> = (schema: T) => ResolverResult;

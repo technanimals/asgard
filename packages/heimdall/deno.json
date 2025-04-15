@@ -1,12 +1,12 @@
 {
   "name": "@asgard/heimdall",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "exports": {
     ".": "./src/index.ts",
     "./aws": "./src/aws.ts",
     "./config": "./src/config.ts",
-    "./server": "./src/server.ts"
+    "./hono": "./src/hono.ts"
   },
   "imports": {
     "aws-lambda": "npm:@types/aws-lambda@8.10.147",

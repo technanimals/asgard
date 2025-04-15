@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any ban-types
 // Generic service interface that all services must implement
 export interface HermodServiceInterface<
   TName extends string = string,
@@ -38,17 +39,13 @@ export abstract class HermodService<
 }
 
 export class HermodServiceDiscovery<
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   TServices extends Record<string, unknown> = {},
 > {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   private static _instance: HermodServiceDiscovery<any>;
   private services = new Map<string, HermodServiceInterface>();
   s!: TServices;
 
   static getInstance<
-    // biome-ignore lint/complexity/noBannedTypes: <explanation>
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     T extends Record<any, unknown> = {},
   >(): HermodServiceDiscovery<T> {
     if (!HermodServiceDiscovery._instance) {
@@ -84,11 +81,12 @@ export class HermodServiceDiscovery<
       const service = new Service(this) as HermodService<
         ExtractServiceNames<typeof services>
       >;
-      service.discover();
-
       names.push(service.serviceName);
-
-      await service.register();
+      if (!this.has(service)) {
+        service.discover();
+        await service.register();
+        this.add(service);
+      }
     }
 
     const registeredServices = await this.getMany(names);
@@ -132,11 +130,15 @@ export class HermodServiceDiscovery<
   /**
    * Check if a service exists in the service discovery.
    *
-   * @param name - The name of the service to check.
+   * @param service - The service name or service instance to check.
    * @returns True if the service exists, false otherwise.
    */
-  has(name: string): boolean {
-    return this.services.has(name);
+  has(service: string | HermodService): boolean {
+    if (service instanceof HermodService) {
+      return this.services.has(service.serviceName);
+    }
+
+    return this.services.has(service);
   }
 }
 /** The options bag to pass to the {@link search} method. */
@@ -145,8 +147,7 @@ export interface HermodServiceConstructor<
   TInstance = unknown,
 > {
   new (
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    serviceDiscovery: HermodServiceDiscovery<any>,
+    serviceDiscovery: HermodServiceDiscovery,
   ): HermodService<TName, TInstance>;
 }
 
