@@ -18,6 +18,7 @@ environment variables with robust validation and type safety.
 - ⚡ **Simple, fluent API** for defining configuration
 - 🚨 **Detailed error reporting** for configuration issues
 - 🧩 **Seamless integration** with other @asgard packages
+- 🪢 **Support for nested configuration** with full type inference
 
 ## Installation
 
@@ -56,14 +57,18 @@ const configParser = env.create((get) => ({
     test: "test",
   }).default("development"),
 
-  // Server configuration - all top-level properties
-  serverPort: get("PORT").number().default(3000),
-  serverHost: get("HOST").string().default("localhost"),
-  enableCors: get("ENABLE_CORS").boolean().default(true),
+  // Server configuration - now supports nested objects!
+  server: {
+    port: get("PORT").number().default(3000),
+    host: get("HOST").string().default("localhost"),
+    cors: get("ENABLE_CORS").boolean().default(true),
+  },
 
-  // Database configuration - all top-level properties
-  databaseUrl: get("DATABASE_URL").string(),
-  dbMaxConnections: get("DB_MAX_CONNECTIONS").number().default(10),
+  // Database configuration - with nested properties
+  database: {
+    url: get("DATABASE_URL").string(),
+    maxConnections: get("DB_MAX_CONNECTIONS").number().default(10),
+  },
 
   // Hardcoded values (passed through unchanged)
   version: "1.0.0",
@@ -74,7 +79,7 @@ const config = configParser.parse();
 
 // Use the configuration
 console.log(`Starting server in ${config.env} mode`);
-console.log(`Server listening at ${config.serverHost}:${config.serverPort}`);
+console.log(`Server listening at ${config.server.host}:${config.server.port}`);
 ```
 
 ## How It Works
@@ -116,11 +121,14 @@ class JordConfigParser<TResponse extends EmptyObject> {
 
 ### JordInferConfig
 
-A type utility that converts Zod schema types to their output types.
+A type utility that converts Zod schema types to their output types, including
+nested objects.
 
 ```typescript
 type JordInferConfig<T extends EmptyObject> = {
-  [K in keyof T]: T[K] extends z.ZodMiniAny ? z.infer<T[K]> : T[K];
+  [K in keyof T]: T[K] extends z.ZodMiniAny ? z.infer<T[K]>
+    : T[K] extends Record<string, unknown> ? JordInferConfig<T[K]>
+    : T[K];
 };
 ```
 
@@ -224,33 +232,45 @@ unavailable due to configuration issues.
 
 ### Nested Configuration
 
-Jörd currently only supports schema validation for top-level configuration
-properties. While you can organize your configuration with nested objects,
-please note that validation is only applied to the top level - nested values
-will be passed through untouched:
+Jörd now fully supports schema validation for nested configuration properties.
+This means you can organize your configuration with nested objects and still get
+full validation and type inference:
 
 ```typescript
 const configParser = env.create((get) => ({
-  // These top-level properties will be validated
-  authEnabled: get("FEATURES_AUTH_ENABLED").boolean().default(true),
-  authProvider: get("FEATURES_AUTH_PROVIDER").enum({
-    local: "local",
-    oauth: "oauth",
-    saml: "saml",
-  }).default("local"),
+  auth: {
+    // These nested properties will be properly validated
+    enabled: get("FEATURES_AUTH_ENABLED").boolean().default(true),
+    provider: get("FEATURES_AUTH_PROVIDER").enum(["local", "oauth", "saml"])
+      .default("local"),
 
-  // Nested objects are structured for organization but values aren't validated by schema
-  features: {
-    billing: {
-      // This is just a regular value, not validated through a schema
-      enabled: process.env.FEATURES_BILLING_ENABLED === "true",
+    // You can nest even deeper
+    oauth: {
+      clientId: get("OAUTH_CLIENT_ID").string(),
+      secret: get("OAUTH_SECRET").string(),
+    },
+  },
+
+  database: {
+    primary: {
+      url: get("PRIMARY_DB_URL").string(),
+      maxConnections: get("PRIMARY_DB_MAX_CONN").number().default(10),
+    },
+    replica: {
+      url: get("REPLICA_DB_URL").string(),
+      maxConnections: get("REPLICA_DB_MAX_CONN").number().default(5),
     },
   },
 }));
-```
 
-If you need validated nested properties, define them at the top level with
-namespaced keys:
+// When parsed, the configuration will maintain its structure
+// with all schema values correctly inferred
+const config = configParser.parse();
+
+// Type-safe access to nested properties
+console.log(`Auth provider: ${config.auth.provider}`);
+console.log(`Primary DB URL: ${config.database.primary.url}`);
+```
 
 ### Custom Validation
 
@@ -294,21 +314,24 @@ import { JordEnvironmentParser } from "@asgard/jord";
 
 // Create your configuration
 const env = new JordEnvironmentParser(Deno.env.toObject());
-const config = env.create((get) => ({
-  serverPort: get("PORT").number().default(3000),
-  corsEnabled: get("CORS_ENABLED").boolean().default(true),
-})).parse();
+const configParser = env.create((get) => ({
+  server: {
+    port: get("PORT").number().default(3000),
+    cors: get("CORS_ENABLED").boolean().default(true),
+  },
+}));
 
 // Use in Heimdall endpoints
 const endpoint = new HeimdallEndpoint({
   path: "/api/users",
   method: "GET",
-  // Pass configuration to handler
+  // Parse configuration when needed
   handler: async ({ services }) => {
+    const config = configParser.parse();
     return {
       statusCode: 200,
       body: {
-        message: `Server running on port ${config.serverPort}`,
+        message: `Server running on port ${config.server.port}`,
       },
     };
   },
@@ -324,8 +347,14 @@ import { JordEnvironmentParser } from "@asgard/jord";
 // Create your configuration parser
 const env = new JordEnvironmentParser(Deno.env.toObject());
 const configParser = env.create((get) => ({
-  redisUrl: get("REDIS_URL").string(),
-  redisPassword: get("REDIS_PASSWORD").string().optional(),
+  redis: {
+    url: get("REDIS_URL").string(),
+    password: get("REDIS_PASSWORD").string().optional(),
+    cluster: {
+      enabled: get("REDIS_CLUSTER_ENABLED").boolean().default(false),
+      nodes: get("REDIS_CLUSTER_NODES").array().optional(),
+    },
+  },
 }));
 
 // Parse configuration inside the service registration
@@ -336,10 +365,15 @@ class CacheService extends HermodService<"cache", Redis> {
     // Parse the configuration at registration time
     const config = configParser.parse();
 
-    // Use the configuration
-    const redis = new Redis(config.redisUrl, {
-      password: config.redisPassword,
-    });
+    // Use the nested configuration
+    const redis = config.redis.cluster.enabled
+      ? new Redis.Cluster(config.redis.cluster.nodes || [], {
+        password: config.redis.password,
+      })
+      : new Redis(config.redis.url, {
+        password: config.redis.password,
+      });
+
     return redis;
   }
 }
