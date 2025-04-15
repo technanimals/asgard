@@ -14,8 +14,12 @@ export class HeimdallEndpoint<
   TParams extends StandardSchemaV1 | undefined = undefined,
   TServices extends HermodServiceConstructor[] = [],
 > {
-  static noopAuthorizer: HeimdallEndpointAuthorizer = () =>
-    Promise.resolve(true);
+  private readonly noopAuthorizer: HeimdallEndpointAuthorizer<
+    TBody,
+    TSearch,
+    TParams,
+    TServices
+  > = () => Promise.resolve(true);
   /**
    * Checks if the given response is a HeimdallEndpointResponse.
    *
@@ -194,7 +198,7 @@ export class HeimdallEndpoint<
     this.handler = options.handler;
     this.description = options.description || "";
     this.tags = options.tags || [];
-    this.isAuthorized = options.isAuthorized || HeimdallEndpoint.noopAuthorizer;
+    this.isAuthorized = options.isAuthorized || this.noopAuthorizer;
   }
 
   /**
