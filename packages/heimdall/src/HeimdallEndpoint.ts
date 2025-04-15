@@ -14,7 +14,8 @@ export class HeimdallEndpoint<
   TParams extends StandardSchemaV1 | undefined = undefined,
   TServices extends HermodServiceConstructor[] = [],
 > {
-  static noopAuthorizer = () => Promise.resolve(true);
+  static noopAuthorizer: HeimdallEndpointAuthorizer = () =>
+    Promise.resolve(true);
   /**
    * Checks if the given response is a HeimdallEndpointResponse.
    *
