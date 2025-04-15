@@ -1,6 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
-import * as z from "@zod/mini";
+import { z } from "zod";
 import get from "lodash.get";
+import set from "lodash.set";
 
 export class JordConfigParser<TResponse extends EmptyObject> {
   constructor(
@@ -11,36 +12,49 @@ export class JordConfigParser<TResponse extends EmptyObject> {
    * @returns The parsed config object
    */
   parse(): JordInferConfig<TResponse> {
-    const parsedConfig: EmptyObject = {};
-    const errors: z.z.core.$ZodIssue[] = [];
+    const errors: z.ZodIssue[] = [];
 
-    for (const key in this.config) {
-      const s = this.config[key];
-      if (s && typeof s === "object" && "safeParse" in s) {
-        const schema = s as unknown as z.ZodMiniAny;
-        const parsed = schema.safeParse(undefined);
-        if (parsed.success) {
-          // If the schema is valid, parse the value
-          parsedConfig[key] = parsed.data;
-        } else {
-          // If the schema is invalid, assign the error
-          errors.push(...parsed.error.issues.map((issue) => ({
-            ...issue,
-            path: [key, ...(issue.path as string[])],
-          })));
-        }
-      } else {
-        // Otherwise, just assign the value
-        parsedConfig[key] = this.config[key];
+    const parseDeep = <T extends EmptyObject>(
+      config: T,
+    ) => {
+      const result: EmptyObject = {};
+
+      if (config && typeof config !== "object") {
+        return config;
       }
-    }
+
+      for (const key in config) {
+        const schema = config[key];
+
+        if (schema instanceof z.ZodSchema) {
+          const parsed = schema.safeParse(undefined);
+          if (parsed.success) {
+            set(result, key, parsed.data);
+          } else {
+            // If the schema is invalid, assign the error
+            errors.push(...parsed.error.issues.map((issue) => ({
+              ...issue,
+              path: [key, ...(issue.path as string[])],
+            })));
+          }
+        } else if (schema && typeof schema === "object") {
+          set(result, key, parseDeep(schema as EmptyObject));
+        }
+      }
+
+      return result;
+    };
+
+    const parsedConfig = parseDeep(this.config) as unknown as JordInferConfig<
+      TResponse
+    >;
 
     if (errors.length > 0) {
       // If there are errors, throw them
       throw errors;
     }
 
-    return parsedConfig as JordInferConfig<TResponse>;
+    return parsedConfig;
   }
 }
 
@@ -49,7 +63,7 @@ export class JordEnvironmentParser<T extends EmptyObject> {
 
   private getZodGetter = (name: string) => {
     // Return an object that has all Zod schemas but with our wrapper
-    return new Proxy(z, {
+    return new Proxy({ ...z }, {
       get: (target, prop) => {
         // deno-lint-ignore ban-ts-comment
         // @ts-ignore
@@ -94,7 +108,9 @@ export class JordEnvironmentParser<T extends EmptyObject> {
 }
 
 export type JordInferConfig<T extends EmptyObject> = {
-  [K in keyof T]: T[K] extends z.ZodMiniAny ? z.infer<T[K]> : T[K];
+  [K in keyof T]: T[K] extends z.ZodSchema ? z.infer<T[K]>
+    : T[K] extends Record<string, unknown> ? JordInferConfig<T[K]>
+    : T[K];
 };
 
 export type JordEnvFetcher<

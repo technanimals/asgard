@@ -10,6 +10,7 @@
     "npm:@standard-schema/spec@1": "1.0.0",
     "npm:@types/aws-lambda@8.10.147": "8.10.147",
     "npm:@types/lodash.get@^4.4.9": "4.4.9",
+    "npm:@types/lodash.set@^4.3.9": "4.3.9",
     "npm:@types/node@*": "22.12.0",
     "npm:@zod/mini@^4.0.0-beta.20250414T061543": "4.0.0-beta.20250414T061543",
     "npm:fast-glob@^3.3.3": "3.3.3",
@@ -18,6 +19,7 @@
     "npm:hono@*": "4.7.6",
     "npm:hono@~4.7.6": "4.7.6",
     "npm:lodash.get@^4.4.2": "4.4.2",
+    "npm:lodash.set@^4.3.2": "4.3.2",
     "npm:stoker@^1.4.2": "1.4.2_@asteasolutions+zod-to-openapi@7.3.0__zod@3.24.2_hono@4.7.6_openapi3-ts@4.4.0_zod@3.24.2",
     "npm:zod-openapi@*": "4.2.4_zod@3.24.2",
     "npm:zod@^3.24.2": "3.24.2"
@@ -119,6 +121,12 @@
     },
     "@types/lodash.get@4.4.9": {
       "integrity": "sha512-J5dvW98sxmGnamqf+/aLP87PYXyrha9xIgc2ZlHl6OHMFR2Ejdxep50QfU0abO1+CH6+ugx+8wEUN1toImAinA==",
+      "dependencies": [
+        "@types/lodash"
+      ]
+    },
+    "@types/lodash.set@4.3.9": {
+      "integrity": "sha512-KOxyNkZpbaggVmqbpr82N2tDVTx05/3/j0f50Es1prxrWB0XYf9p3QNxqcbWb7P1Q9wlvsUSlCFnwlPCIJ46PQ==",
       "dependencies": [
         "@types/lodash"
       ]
@@ -240,6 +248,9 @@
     "lodash.get@4.4.2": {
       "integrity": "sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ=="
     },
+    "lodash.set@4.3.2": {
+      "integrity": "sha512-4hNPN5jlm/N/HLMCO43v8BXKq9Z7QdAGc/VGrRD61w8gN9g/6jF9A4L1pbUgBLCffi0w9VsXfTOij5x8iTyFvg=="
+    },
     "merge2@1.4.1": {
       "integrity": "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg=="
     },
@@ -315,10 +326,12 @@
       "jsr:@std/assert@*",
       "npm:@hono/zod-validator@*",
       "npm:@types/lodash.get@^4.4.9",
+      "npm:@types/lodash.set@^4.3.9",
       "npm:@zod/mini@^4.0.0-beta.20250414T061543",
       "npm:hono-openapi@*",
       "npm:hono@*",
       "npm:lodash.get@^4.4.2",
+      "npm:lodash.set@^4.3.2",
       "npm:zod-openapi@*",
       "npm:zod@^3.24.2"
     ],
