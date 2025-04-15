@@ -16,7 +16,7 @@ export class HeimdallEndpoint<
 > {
   _handlerPath?: HandlerPath;
 
-  get handlerPath() {
+  get handlerPath(): string {
     if (!this._handlerPath) {
       throw `${this.route} does not have a handler path. Please set it manually.`;
     }
