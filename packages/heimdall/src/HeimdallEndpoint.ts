@@ -18,6 +18,22 @@ export class HeimdallEndpoint<
 
   ___HeimdallEndpoint___ = true;
 
+  /**
+   * Checks if the given resource is a HeimdallEndpoint.
+   *
+   * @param resource - The resource to check.
+   * @returns - Whether the resource is a HeimdallEndpoint.
+   */
+  static isEndpoint(
+    resource: unknown,
+  ): resource is HeimdallEndpoint<HeimdallPath> {
+    return Boolean(
+      resource &&
+        typeof resource === "object" &&
+        (resource as HeimdallEndpoint<HeimdallPath>).___HeimdallEndpoint___,
+    );
+  }
+
   get handlerPath(): string {
     if (!this._handlerPath) {
       throw `${this.route} does not have a handler path. Please set it manually.`;
