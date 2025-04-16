@@ -102,7 +102,7 @@ export abstract class HeimdallDeploymentProvider<
   export(
     endpoints: HeimdallEndpoint<HeimdallPath>[],
     cwd: string,
-  ) {
+  ): Promise<void> {
     return HeimdallDeploymentProvider.export(
       endpoints,
       this.provider,
