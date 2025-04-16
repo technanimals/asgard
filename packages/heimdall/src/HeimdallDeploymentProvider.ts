@@ -80,12 +80,12 @@ export abstract class HeimdallDeploymentProvider<
         providerImport,
         `import { ${e.handlerName} } from "${relativePath}";`,
         "",
-        `export default new Provider(${e.handlerName}).handler;`,
+        `export const handler = new Provider(${e.handlerName}).handler;`,
       ].join("\n");
 
       handlers.push({
         name,
-        handler,
+        handler: `${handler}.handler`,
         route: getRoute(e.route),
       });
 
