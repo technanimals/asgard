@@ -43,3 +43,5 @@ yarn-error.log*
 *.gcp.js
 *.azure.ts
 *.azure.js
+
+.heimdall/

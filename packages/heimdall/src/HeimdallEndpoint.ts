@@ -34,15 +34,24 @@ export class HeimdallEndpoint<
     );
   }
 
+  get handlerName(): string {
+    if (!this._handlerPath) {
+      throw `${this.route} does not have a handler path. Please set it manually.`;
+    }
+
+    const [_, method] = this._handlerPath.split("#");
+
+    return method;
+  }
+
   get handlerPath(): string {
     if (!this._handlerPath) {
       throw `${this.route} does not have a handler path. Please set it manually.`;
     }
 
-    const [p, method] = this._handlerPath.split("#");
-    const [path] = p.split(".");
+    const [p] = this._handlerPath.split("#");
 
-    return `${path}.${method}`;
+    return p;
   }
 
   private readonly noopAuthorizer: HeimdallEndpointAuthorizer<

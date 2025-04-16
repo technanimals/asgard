@@ -7,10 +7,6 @@ import {
   type HeimdallRoute,
 } from "./HeimdallEndpoint.ts";
 
-import fs from "node:fs/promises";
-
-import groupBy from "lodash.groupby";
-
 export class HeimdallConfig {
   private routes: Pattern[];
   private root: string;
@@ -33,64 +29,7 @@ export class HeimdallConfig {
 
     return r.toLowerCase();
   }
-  /**
-   * Creates AWS handlers from the provided endpoints.
-   *
-   * @param endpoints - The endpoints to create AWS handlers from.
-   * @returns - An array of handlers.
-   */
-  static async createAWSHandlersFromEndpoints<TPath extends HeimdallPath>(
-    endpoints: HeimdallEndpoint<TPath>[],
-  ): Promise<Handler[]> {
-    const groupedEndpoints = groupBy(
-      endpoints,
-      (endpoint) => endpoint._handlerPath?.split("#")[0],
-    );
 
-    const handlers: Handler[] = [];
-    const projectRoot = await HeimdallConfig.getProjectRoot(process.cwd());
-
-    const groupedEndpointsKeys = Object.keys(groupedEndpoints);
-
-    for await (const group of groupedEndpointsKeys) {
-      const relativePath = path.relative(projectRoot, group);
-      const groupEndpoints = groupedEndpoints[group];
-      const parts = group.split("/");
-      const file = parts.pop() || "";
-      const [name, ext] = file.split(".");
-      const newFileName = `${name}.aws.${ext}`;
-      const newFilePath = [...parts, newFileName].join("/");
-      const imports = groupEndpoints.map((endpoint) => {
-        const name = endpoint._handlerPath?.split("#")[1] as string;
-
-        return {
-          name,
-          handler: relativePath.replace(`.${ext}`, `.${name}AWSHandler`),
-          route: endpoint.route
-            .replace(/\[([^\]]+)\]/g, "{$1}")
-            .replace(/:([\w\d_-]+)/g, "{$1}") as HeimdallRoute<HeimdallPath>,
-        };
-      });
-
-      handlers.push(...imports);
-
-      const names = imports.map((endpoint) => endpoint.name);
-      const fileContent = [
-        'import { HeimdallAWSAPIGatewayV2Handler } from "@asgard/heimdall/aws"',
-        `import { ${names.join(", ")} } from "./${file}"`,
-        "",
-        names
-          .map((endpoint) => {
-            return `export const ${endpoint}AWSHandler = new HeimdallAWSAPIGatewayV2Handler(${endpoint}).handler;`;
-          })
-          .join("\n"),
-      ];
-
-      await fs.writeFile(newFilePath, fileContent.join("\n"));
-    }
-
-    return handlers;
-  }
   /**
    * Retrieves all endpoints from a file by importing it and checking for instances of HeimdallEndpoint.
    *
@@ -110,8 +49,6 @@ export class HeimdallConfig {
     const endpoints = exportNames.reduce(
       (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
         const fileExport = file[e];
-
-        console.log("File export: ", fileExport);
 
         if (HeimdallEndpoint.isEndpoint(fileExport)) {
           console.log("Found endpoint: ", fileExport.route);
