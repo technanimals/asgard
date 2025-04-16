@@ -114,10 +114,13 @@ export class HeimdallConfig {
         console.log("File export: ", fileExport);
 
         if (fileExport instanceof HeimdallEndpoint) {
+          console.log("Found endpoint: ", fileExport.route);
           // const relativePath = path.relative(root, f);
 
           fileExport._handlerPath = `${f}#${e}`;
           acc.push(fileExport);
+        } else {
+          console.log(`${e} is not an endpoint:`);
         }
 
         return acc;
