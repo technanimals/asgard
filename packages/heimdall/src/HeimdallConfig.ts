@@ -105,6 +105,8 @@ export class HeimdallConfig {
 
     const exportNames = Object.keys(file);
 
+    console.log("Export names:", exportNames);
+
     const endpoints = exportNames.reduce(
       (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
         const fileExport = file[e];
