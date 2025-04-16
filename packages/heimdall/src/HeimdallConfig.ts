@@ -100,22 +100,30 @@ export class HeimdallConfig {
   static async getEndpointFromFile(
     f: string,
   ): Promise<HeimdallEndpoint<HeimdallPath>[]> {
+    console.log("Importing file: ", f);
     const file = await import(f);
 
     const exportNames = Object.keys(file);
 
-    return exportNames.reduce((acc: HeimdallEndpoint<HeimdallPath>[], e) => {
-      const fileExport = file[e];
+    const endpoints = exportNames.reduce(
+      (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
+        const fileExport = file[e];
 
-      if (fileExport instanceof HeimdallEndpoint) {
-        // const relativePath = path.relative(root, f);
+        if (fileExport instanceof HeimdallEndpoint) {
+          // const relativePath = path.relative(root, f);
 
-        fileExport._handlerPath = `${f}#${e}`;
-        acc.push(fileExport);
-      }
+          fileExport._handlerPath = `${f}#${e}`;
+          acc.push(fileExport);
+        }
 
-      return acc;
-    }, []);
+        return acc;
+      },
+      [],
+    );
+
+    console.log(`Found: ${endpoints.length} in ${f}`);
+
+    return endpoints;
   }
   /**
    * Recursively retrieves the project root by checking for the presence of lock files.
@@ -176,6 +184,7 @@ export class HeimdallConfig {
         }
 
         if (!existing) {
+          console.log("Adding endpoint: ", e.route);
           endpoints.set(e.route, e);
           continue;
         }
