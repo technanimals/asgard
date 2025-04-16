@@ -97,7 +97,9 @@ export class HeimdallConfig {
    * @param f - The file path to import.
    * @returns - An array of HeimdallEndpoint instances found in the file.
    */
-  static async getEndpointFromFile(f: string) {
+  static async getEndpointFromFile(
+    f: string,
+  ): Promise<HeimdallEndpoint<HeimdallPath>[]> {
     const file = await import(f);
 
     const exportNames = Object.keys(file);
