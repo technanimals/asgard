@@ -14,6 +14,7 @@ import groupBy from "lodash.groupby";
 export class HeimdallConfig {
   private routes: Pattern[];
   private root: string;
+  private throwOnDuplicate: boolean;
   /**
    * Routifies a route by ensuring it starts with a `/` and ends without one.
    * @example `user/profile` -> `/user/profile` and `user/profile/` -> `/user/profile`
@@ -154,23 +155,40 @@ export class HeimdallConfig {
       const endpointsFromFile = await this.getEndpointFromFile(
         p,
       );
-      // @T
-      endpointsFromFile.forEach((e) => {
-        if (endpoints.has(e.route)) {
+
+      for (const e of endpointsFromFile) {
+        const existing = endpoints.get(e.route);
+        if (e === existing) {
+          console.warn("Duplicate endpoint found: ", e.route);
+          continue;
+        }
+
+        if (!existing) {
+          endpoints.set(e.route, e);
+          continue;
+        }
+
+        const message =
+          `Duplicate endpoint found: ${e.route} in ${f} and ${existing._handlerPath}`;
+        if (this.throwOnDuplicate) {
           throw new Error(
-            `Duplicate route found: ${e.route}. Please check your routes at ${p}.`,
+            message,
           );
         }
-        endpoints.set(e.route, e);
-      });
+
+        console.warn(message);
+      }
     }
 
     return endpoints;
   }
 
-  constructor({ root, routes }: HeimdallConfigOptions) {
+  constructor(
+    { root, routes, throwOnDuplicate = true }: HeimdallConfigOptions,
+  ) {
     this.routes = routes;
     this.root = root;
+    this.throwOnDuplicate = throwOnDuplicate;
   }
 }
 
@@ -190,6 +208,10 @@ export interface HeimdallConfigOptions {
    *  The root directory of the project.
    */
   root: string;
+  /**
+   *  Whether to throw an error if a duplicate endpoint is found.
+   */
+  throwOnDuplicate?: boolean;
 }
 /**
  * Defines the Heimdall config.
