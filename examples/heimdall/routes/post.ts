@@ -1,6 +1,6 @@
 import { HeimdallEndpoint } from "@asgard/heimdall";
 import z from "zod";
-import { LoggerService, UserService } from "./services.ts";
+import { UserService } from "./services.ts";
 
 export const getUser = new HeimdallEndpoint({
   path: "/users",
