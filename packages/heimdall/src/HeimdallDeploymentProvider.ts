@@ -70,7 +70,10 @@ export abstract class HeimdallDeploymentProvider<
 
       const filePath = path.join(parent, file);
 
-      const relativePath = path.relative(filePath, e.handlerPath);
+      const b = path.relative(e.handlerPath, cwd);
+      const c = path.relative(cwd, e.handlerPath);
+
+      const importPath = [b, c].join("/");
       const name = e.handlerName;
       const parts = filePath.split(".");
       parts.pop();
@@ -78,7 +81,7 @@ export abstract class HeimdallDeploymentProvider<
 
       const content = [
         providerImport,
-        `import { ${e.handlerName} } from "${relativePath}";`,
+        `import { ${e.handlerName} } from "${importPath}";`,
         "",
         `export const handler = new Provider(${e.handlerName}).handler;`,
       ].join("\n");
