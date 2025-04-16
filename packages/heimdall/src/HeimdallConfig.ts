@@ -111,6 +111,8 @@ export class HeimdallConfig {
       (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
         const fileExport = file[e];
 
+        console.log("File export: ", fileExport);
+
         if (fileExport instanceof HeimdallEndpoint) {
           // const relativePath = path.relative(root, f);
 
