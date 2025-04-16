@@ -33,7 +33,12 @@ export class HeimdallConfig {
 
     return r.toLowerCase();
   }
-
+  /**
+   * Creates AWS handlers from the provided endpoints.
+   *
+   * @param endpoints - The endpoints to create AWS handlers from.
+   * @returns - An array of handlers.
+   */
   static async createAWSHandlersFromEndpoints<TPath extends HeimdallPath>(
     endpoints: HeimdallEndpoint<TPath>[],
   ): Promise<Handler[]> {
@@ -48,10 +53,7 @@ export class HeimdallConfig {
     const groupedEndpointsKeys = Object.keys(groupedEndpoints);
 
     for await (const group of groupedEndpointsKeys) {
-      const relativePath = path.relative(
-        projectRoot,
-        group,
-      );
+      const relativePath = path.relative(projectRoot, group);
       const groupEndpoints = groupedEndpoints[group];
       const parts = group.split("/");
       const file = parts.pop() || "";
@@ -64,10 +66,9 @@ export class HeimdallConfig {
         return {
           name,
           handler: relativePath.replace(`.${ext}`, `.${name}AWSHandler`),
-          route: endpoint.route.replace(
-            /\[([^\]]+)\]/g,
-            "{$1}",
-          ).replace(/:([\w\d_-]+)/g, "{$1}") as HeimdallRoute<HeimdallPath>,
+          route: endpoint.route
+            .replace(/\[([^\]]+)\]/g, "{$1}")
+            .replace(/:([\w\d_-]+)/g, "{$1}") as HeimdallRoute<HeimdallPath>,
         };
       });
 
@@ -78,9 +79,11 @@ export class HeimdallConfig {
         'import { HeimdallAWSAPIGatewayV2Handler } from "@asgard/heimdall/aws"',
         `import { ${names.join(", ")} } from "./${file}"`,
         "",
-        names.map((endpoint) => {
-          return `export const ${endpoint}AWSHandler = new HeimdallAWSAPIGatewayV2Handler(${endpoint}).handler;`;
-        }).join("\n"),
+        names
+          .map((endpoint) => {
+            return `export const ${endpoint}AWSHandler = new HeimdallAWSAPIGatewayV2Handler(${endpoint}).handler;`;
+          })
+          .join("\n"),
       ];
 
       await fs.writeFile(newFilePath, fileContent.join("\n"));
@@ -88,29 +91,36 @@ export class HeimdallConfig {
 
     return handlers;
   }
-
-  private async getEndpointFromFile(f: string) {
+  /**
+   * Retrieves all endpoints from a file by importing it and checking for instances of HeimdallEndpoint.
+   *
+   * @param f - The file path to import.
+   * @returns - An array of HeimdallEndpoint instances found in the file.
+   */
+  static async getEndpointFromFile(f: string) {
     const file = await import(f);
 
     const exportNames = Object.keys(file);
 
-    return exportNames.reduce(
-      (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
-        const fileExport = file[e];
+    return exportNames.reduce((acc: HeimdallEndpoint<HeimdallPath>[], e) => {
+      const fileExport = file[e];
 
-        if ((fileExport instanceof HeimdallEndpoint)) {
-          // const relativePath = path.relative(root, f);
+      if (fileExport instanceof HeimdallEndpoint) {
+        // const relativePath = path.relative(root, f);
 
-          fileExport._handlerPath = `${f}#${e}`;
-          acc.push(fileExport);
-        }
+        fileExport._handlerPath = `${f}#${e}`;
+        acc.push(fileExport);
+      }
 
-        return acc;
-      },
-      [],
-    );
+      return acc;
+    }, []);
   }
-
+  /**
+   * Recursively retrieves the project root by checking for the presence of lock files.
+   *
+   * @param cwd - The current working directory.
+   * @returns - The project root directory.
+   */
   static async getProjectRoot(cwd: string): Promise<string> {
     if (cwd === "/") {
       return cwd;
@@ -140,10 +150,12 @@ export class HeimdallConfig {
    *
    * @returns - A map of endpoints with their routes as keys.
    */
-  async getEndpoints(): Promise<
-    Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>
-  > {
-    const files = fg.stream(this.routes, { dot: true, cwd: this.root });
+  static async getEndpoints(
+    routes: Pattern[],
+    cwd: string,
+    throwOnDuplicate = true,
+  ): Promise<Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>> {
+    const files = fg.stream(routes, { dot: true, cwd });
 
     const endpoints: Map<
       HeimdallRoute<HeimdallPath>,
@@ -151,10 +163,8 @@ export class HeimdallConfig {
     > = new Map();
 
     for await (const f of files) {
-      const p = path.join(this.root, f.toString());
-      const endpointsFromFile = await this.getEndpointFromFile(
-        p,
-      );
+      const p = path.join(cwd, f.toString());
+      const endpointsFromFile = await HeimdallConfig.getEndpointFromFile(p);
 
       for (const e of endpointsFromFile) {
         const existing = endpoints.get(e.route);
@@ -170,10 +180,8 @@ export class HeimdallConfig {
 
         const message =
           `Duplicate endpoint found: ${e.route} in ${f} and ${existing._handlerPath}`;
-        if (this.throwOnDuplicate) {
-          throw new Error(
-            message,
-          );
+        if (throwOnDuplicate) {
+          throw new Error(message);
         }
 
         console.warn(message);
@@ -183,12 +191,28 @@ export class HeimdallConfig {
     return endpoints;
   }
 
-  constructor(
-    { root, routes, throwOnDuplicate = true }: HeimdallConfigOptions,
-  ) {
+  constructor({
+    root,
+    routes,
+    throwOnDuplicate = true,
+  }: HeimdallConfigOptions) {
     this.routes = routes;
     this.root = root;
     this.throwOnDuplicate = throwOnDuplicate;
+  }
+  /**
+   * Retrieves all endpoints from the specified routes, all exports of instances of HeimdallEndpoint
+   *
+   * @returns - A map of endpoints with their routes as keys.
+   */
+  getEndpoints(): Promise<
+    Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>
+  > {
+    return HeimdallConfig.getEndpoints(
+      this.routes,
+      this.root,
+      this.throwOnDuplicate,
+    );
   }
 }
 
