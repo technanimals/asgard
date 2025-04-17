@@ -1,4 +1,3 @@
-import console from "node:console";
 import type {
   HeimdallEndpoint,
   HeimdallPath,
@@ -69,11 +68,12 @@ export abstract class HeimdallDeploymentProvider<
       const file = `${HeimdallDeploymentProvider.normalizeRoute(e.route)}.ts`;
 
       const filePath = path.join(parent, file);
+      const generatedFileDir = path.dirname(filePath);
+      const importPath = path.relative(generatedFileDir, e.handlerPath);
 
-      const b = path.relative(e.handlerPath, cwd);
-      const c = path.relative(cwd, e.handlerPath);
-
-      const importPath = [b, c].join("/");
+      const formattedImportPath = importPath.startsWith(".")
+        ? importPath
+        : `./${importPath}`;
       const name = e.handlerName;
       const parts = filePath.split(".");
       parts.pop();
@@ -81,7 +81,7 @@ export abstract class HeimdallDeploymentProvider<
 
       const content = [
         providerImport,
-        `import { ${e.handlerName} } from "${importPath}";`,
+        `import { ${e.handlerName} } from "${formattedImportPath}";`,
         "",
         `export const handler = new Provider(${e.handlerName}).handler;`,
       ].join("\n");
