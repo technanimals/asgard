@@ -1,0 +1,10 @@
+{
+  "name": "@asgard/tyr",
+  "version": "0.0.1",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./native": "./src/native.ts",
+    "./browser": "./src/browser.ts"
+  }
+}

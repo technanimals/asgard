@@ -3,6 +3,7 @@
     "./packages/heimdall",
     "./packages/hermod",
     "./packages/jord",
+    "./packages/tyr",
     "./examples/heimdall"
   ],
   "imports": {
