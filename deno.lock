@@ -1,6 +1,7 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
+    "jsr:@noble/hashes@^1.8.0": "1.8.0",
     "jsr:@std/assert@*": "1.0.12",
     "jsr:@std/internal@^1.0.6": "1.0.6",
     "npm:@hono/zod-validator@*": "0.4.3_hono@4.7.6_zod@3.24.2",
@@ -23,10 +24,14 @@
     "npm:lodash.groupby@^4.6.0": "4.6.0",
     "npm:lodash.set@^4.3.2": "4.3.2",
     "npm:stoker@^1.4.2": "1.4.2_@asteasolutions+zod-to-openapi@7.3.0__zod@3.24.2_hono@4.7.6_openapi3-ts@4.4.0_zod@3.24.2",
+    "npm:tweetnacl@^1.0.3": "1.0.3",
     "npm:zod-openapi@*": "4.2.4_zod@3.24.2",
     "npm:zod@^3.24.2": "3.24.2"
   },
   "jsr": {
+    "@noble/hashes@1.8.0": {
+      "integrity": "b52a2fcb4d02f8d8137871564a31f1ee9e2b0d15eedabbf32d2f7333f0abc939"
+    },
     "@std/assert@1.0.12": {
       "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
       "dependencies": [
@@ -212,6 +217,12 @@
         "json-schema-walker",
         "zod",
         "zod-openapi"
+      ],
+      "optionalPeers": [
+        "@hono/zod-validator",
+        "hono",
+        "zod",
+        "zod-openapi"
       ]
     },
     "hono-openapi@0.4.6_hono@4.7.6_zod@3.24.2": {
@@ -220,6 +231,22 @@
         "hono",
         "json-schema-walker",
         "zod"
+      ],
+      "optionalPeers": [
+        "@hono/arktype-validator@^2.0.0",
+        "@hono/effect-validator@^1.2.0",
+        "@hono/typebox-validator@^0.2.0 || ^0.3.0",
+        "@hono/valibot-validator@^0.5.1",
+        "@hono/zod-validator",
+        "@sinclair/typebox@^0.34.9",
+        "@valibot/to-json-schema@^1.0.0-beta.3",
+        "arktype@^2.0.0-rc.25",
+        "effect@^3.11.3",
+        "hono",
+        "openapi-types@^12.1.3",
+        "valibot@^1.0.0-beta.9",
+        "zod",
+        "zod-openapi"
       ]
     },
     "hono@4.7.6": {
@@ -244,7 +271,8 @@
       "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
       "dependencies": [
         "argparse"
-      ]
+      ],
+      "bin": true
     },
     "json-schema-walker@2.0.0": {
       "integrity": "sha512-nXN2cMky0Iw7Af28w061hmxaPDaML5/bQD9nwm1lOoIKEGjHcRGxqWe4MfrkYThYAPjSUhmsp4bJNoLAyVn9Xw==",
@@ -254,7 +282,8 @@
       ]
     },
     "lodash.get@4.4.2": {
-      "integrity": "sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ=="
+      "integrity": "sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ==",
+      "deprecated": true
     },
     "lodash.groupby@4.6.0": {
       "integrity": "sha512-5dcWxm23+VAoz+awKmBaiBvzox8+RqMgFhi7UvX9DHZr2HdxHXM/Wrf8cfKpsW37RNrvtPn6hSwNqurSILbmJw=="
@@ -273,7 +302,8 @@
       ]
     },
     "nanoid@5.1.5": {
-      "integrity": "sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw=="
+      "integrity": "sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==",
+      "bin": true
     },
     "openapi3-ts@4.4.0": {
       "integrity": "sha512-9asTNB9IkKEzWMcHmVZE7Ts3kC9G7AFHfs8i7caD8HbI76gEjdkId4z/AkP83xdZsH7PLAnnbl47qZkXuxpArw==",
@@ -310,6 +340,9 @@
         "is-number"
       ]
     },
+    "tweetnacl@1.0.3": {
+      "integrity": "sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw=="
+    },
     "type-fest@4.39.1": {
       "integrity": "sha512-uW9qzd66uyHYxwyVBYiwS4Oi0qZyUqwjU+Oevr6ZogYiXt99EOYtwvzMSLw1c3lYo2HzJsep/NB23iEVEgjG/w=="
     },
@@ -317,7 +350,8 @@
       "integrity": "sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg=="
     },
     "yaml@2.7.0": {
-      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA=="
+      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==",
+      "bin": true
     },
     "zhead@2.2.4": {
       "integrity": "sha512-8F0OI5dpWIA5IGG5NHUg9staDwz/ZPxZtvGVf01j7vHqSyZ0raHY+78atOVxRqb73AotX22uV1pXt3gYSstGag=="
@@ -334,6 +368,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@noble/hashes@^1.8.0",
       "jsr:@std/assert@*",
       "npm:@hono/zod-validator@*",
       "npm:@types/lodash.get@^4.4.9",
@@ -345,6 +380,7 @@
       "npm:lodash.get@^4.4.2",
       "npm:lodash.groupby@^4.6.0",
       "npm:lodash.set@^4.3.2",
+      "npm:tweetnacl@^1.0.3",
       "npm:zod-openapi@*",
       "npm:zod@^3.24.2"
     ],
