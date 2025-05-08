@@ -6,21 +6,28 @@ import {
 } from "@asgard/hermod";
 
 export class HeimdallHandler<
-  TInput extends HeimdallHandlerObjectSchema,
-  TResponse extends HeimdallHandlerObjectSchema,
+  TInput extends HeimdallBaseSchema,
+  TResponse extends HeimdallBaseSchema,
   TServices extends HermodServiceConstructor[] = [],
 > {
   static isStandardSchema(schema: unknown): schema is StandardSchemaV1 {
-    if (!schema || typeof schema !== "object") {
+    if (!schema || typeof schema !== "object" || !("~standard" in schema)) {
       return false;
     }
 
-    return "~standard" in schema;
+    const standardSchema = schema["~standard"];
+
+    if (!standardSchema || typeof standardSchema !== "object") {
+      return false;
+    }
+
+    return "validate" in standardSchema &&
+      typeof standardSchema.validate === "function";
   }
 
   static async parseSchema<
     TSchema extends HeimdallBaseSchema,
-    T extends EmptyObject,
+    T,
   >(
     schema: TSchema,
     data: T,
@@ -46,7 +53,7 @@ export class HeimdallHandler<
   >(
     i: unknown,
     schemas: TSchemas,
-  ): Promise<HeimdallValidationObjectOutput<TSchemas>> {
+  ): Promise<HeimdallHandlerObjectSchemaOutput<TSchemas>> {
     if (!i || typeof i !== "object") {
       throw new Error("Input should be an object");
     }
@@ -54,7 +61,7 @@ export class HeimdallHandler<
     const input = i as Record<string, unknown>;
 
     const keys = Object.keys(input);
-    const validated = {} as HeimdallValidationObjectOutput<TSchemas>;
+    const validated = {} as HeimdallHandlerObjectSchemaOutput<TSchemas>;
     const issues: Record<string, readonly StandardSchemaV1.Issue[]> = {};
     let hasIssues = false;
 
@@ -106,8 +113,8 @@ export class HeimdallHandler<
 
   parseInput(
     input: unknown,
-  ): Promise<HeimdallValidationObjectOutput<TInput>> {
-    return HeimdallHandler.parseObjectSchemas(input, this.input);
+  ): Promise<HeimdallValidationSchemaOutput<TInput>> {
+    return HeimdallHandler.parseSchema(this.input, input);
   }
 
   run: HeimdallHandlerRunner<
@@ -133,14 +140,16 @@ export type HeimdallHandlerObjectSchema = {
   [k: string]: StandardSchemaV1;
 };
 
+export type HeimdallBaseSchema = HeimdallHandlerObjectSchema | StandardSchemaV1;
+
 export type HeimdallHandlerSchema<T> = T extends StandardSchemaV1 ? T
   : (T extends HeimdallHandlerObjectSchema ? T : never);
 
 export type HeimdallValidationOutput<
-  T extends StandardSchemaV1 | undefined,
-> = T extends StandardSchemaV1 ? StandardSchemaV1.InferOutput<T> : undefined;
+  T extends StandardSchemaV1,
+> = StandardSchemaV1.InferOutput<T>;
 
-export type HeimdallValidationObjectOutput<
+export type HeimdallHandlerObjectSchemaOutput<
   TInput extends HeimdallHandlerObjectSchema,
 > = {
   [k in keyof TInput]: HeimdallValidationOutput<TInput[k]>;
@@ -149,7 +158,7 @@ export type HeimdallValidationObjectOutput<
 export type HeimdallValidationSchemaOutput<
   TSchema,
 > = TSchema extends HeimdallHandlerObjectSchema
-  ? HeimdallValidationObjectOutput<TSchema>
+  ? HeimdallHandlerObjectSchemaOutput<TSchema>
   : (TSchema extends StandardSchemaV1 ? StandardSchemaV1.InferOutput<TSchema>
     : never);
 
@@ -174,15 +183,11 @@ export type HeimdallHandlerType<
   HeimdallValidationSchemaOutput<TResponse>
 >;
 
-export type HeimdallBaseSchema =
-  | StandardSchemaV1
-  | HeimdallHandlerObjectSchema;
-
 export type HeimdallHandlerRunner<
-  TInput extends HeimdallHandlerObjectSchema,
+  TInput extends HeimdallBaseSchema,
   TResponse extends HeimdallBaseSchema,
 > = (
-  input: HeimdallValidationObjectOutput<TInput>,
+  input: HeimdallValidationSchemaOutput<TInput>,
 ) => Promise<
   HeimdallValidationSchemaOutput<TResponse>
 >;
@@ -214,5 +219,3 @@ export type HeimdallHandlerOptions<
   >;
   serviceDiscovery?: HermodServiceDiscovery<HermodServiceRecord<TServices>>;
 };
-
-type EmptyObject = Record<string, unknown>;
