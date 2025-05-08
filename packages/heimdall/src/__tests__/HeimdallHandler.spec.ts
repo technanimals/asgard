@@ -1,5 +1,4 @@
-import { HeimdallEndpoint } from "../HeimdallEndpoint.ts";
-import { assertEquals, assertInstanceOf } from "@std/assert";
+import { assertEquals } from "@std/assert";
 
 import { z } from "zod";
 
@@ -33,25 +32,29 @@ Deno.test({
 Deno.test({
   name: "Should Validate Standard Response Schema",
   fn: async () => {
-    const inputSchema = z.object({
-      a: z.string(),
-    });
+    const inputSchema = { a: z.string(), b: z.number(), c: z.object({}) };
 
     const handler = new HeimdallHandler({
       input: inputSchema,
-      response: inputSchema,
+      response: z.object({
+        name: z.string(),
+      }),
       services: [],
-      handler: ({ input }) => {
-        return Promise.resolve(input);
+      handler: () => {
+        return Promise.resolve({
+          name: "Name",
+        });
       },
     });
 
     const input = {
       a: "Hello",
+      b: 1,
+      c: {},
     };
 
     const output = await handler.run(input);
 
-    assertEquals(output, input);
+    assertEquals(output, { name: "Name" });
   },
 });
