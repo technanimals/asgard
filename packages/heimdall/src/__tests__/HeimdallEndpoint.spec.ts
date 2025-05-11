@@ -2,7 +2,7 @@ import { HeimdallEndpoint } from "../HeimdallEndpoint.ts";
 import { assertEquals, assertInstanceOf } from "@std/assert";
 
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import { z } from "zod";
+import * as z from "@zod/mini";
 import { HermodService } from "@asgard/hermod";
 
 class ConsoleLoggerService extends HermodService<"log", Console> {

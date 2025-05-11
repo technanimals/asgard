@@ -12,6 +12,9 @@
       }
     }
   },
+  "features": {
+    "edit_prediction_provider": "zed"
+  },
   "languages": {
     "TypeScript": {
       "language_servers": [

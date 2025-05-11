@@ -1,9 +1,16 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
+import * as z from "@zod/mini";
 import {
   type HermodServiceConstructor,
   HermodServiceDiscovery,
   type HermodServiceRecord,
 } from "@asgard/hermod";
+
+import type {
+  InferVoidableSchemaOutput,
+  RemoveNever,
+  VoidableStandardSchema,
+} from "./types.ts";
 
 export class HeimdallHandler<
   TInput extends HeimdallBaseSchema,
@@ -29,9 +36,11 @@ export class HeimdallHandler<
     TSchema extends HeimdallBaseSchema,
     T,
   >(
-    schema: TSchema,
+    s: TSchema,
     data: T,
   ): Promise<HeimdallValidationSchemaOutput<TSchema>> {
+    const schema = s ?? z.void();
+
     if (!HeimdallHandler.isStandardSchema(schema)) {
       return HeimdallHandler.parseObjectSchemas(
         data,
@@ -137,17 +146,19 @@ export class HeimdallHandler<
 }
 
 export type HeimdallHandlerObjectSchema = {
-  [k: string]: StandardSchemaV1;
+  [k: string]: VoidableStandardSchema;
 };
 
-export type HeimdallBaseSchema = HeimdallHandlerObjectSchema | StandardSchemaV1;
+export type HeimdallBaseSchema =
+  | HeimdallHandlerObjectSchema
+  | VoidableStandardSchema;
 
-export type HeimdallHandlerSchema<T> = T extends StandardSchemaV1 ? T
+export type HeimdallHandlerSchema<T> = T extends VoidableStandardSchema ? T
   : (T extends HeimdallHandlerObjectSchema ? T : never);
 
 export type HeimdallValidationOutput<
-  T extends StandardSchemaV1,
-> = StandardSchemaV1.InferOutput<T>;
+  T extends VoidableStandardSchema,
+> = T extends undefined ? never : InferVoidableSchemaOutput<T>;
 
 export type HeimdallHandlerObjectSchemaOutput<
   TInput extends HeimdallHandlerObjectSchema,
@@ -159,7 +170,7 @@ export type HeimdallValidationSchemaOutput<
   TSchema,
 > = TSchema extends HeimdallHandlerObjectSchema
   ? HeimdallHandlerObjectSchemaOutput<TSchema>
-  : (TSchema extends StandardSchemaV1 ? StandardSchemaV1.InferOutput<TSchema>
+  : (TSchema extends VoidableStandardSchema ? InferVoidableSchemaOutput<TSchema>
     : never);
 
 export type HeimdalltHandlerEvent<
@@ -187,7 +198,7 @@ export type HeimdallHandlerRunner<
   TInput extends HeimdallBaseSchema,
   TResponse extends HeimdallBaseSchema,
 > = (
-  input: HeimdallValidationSchemaOutput<TInput>,
+  input: RemoveNever<HeimdallValidationSchemaOutput<TInput>>,
 ) => Promise<
   HeimdallValidationSchemaOutput<TResponse>
 >;

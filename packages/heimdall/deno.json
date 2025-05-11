@@ -14,7 +14,7 @@
     "@middy/core": "npm:@middy/core@6.1.6",
     "@standard-schema/spec": "npm:@standard-schema/spec@^1.0.0",
     "stoker": "npm:stoker@^1.4.2",
-    "zod": "npm:zod@^3.24.2",
+    "@zod/mini": "npm:@zod/mini@~4.0.0-beta.0",
     "fast-glob": "npm:fast-glob@^3.3.3",
     "@scalar/hono-api-reference": "npm:@scalar/hono-api-reference@~0.8.1",
     "hono-openapi": "npm:hono-openapi@~0.4.6",
