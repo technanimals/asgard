@@ -60,19 +60,41 @@ export class HeimdallEndpointV2<
   _handlerPath?: HandlerPath;
   readonly path: TPath;
   readonly method: HttpMethod;
+  readonly body: TBody;
+  readonly res: TResponse;
+  readonly params: TParams;
+  readonly search: TSearch;
+  readonly tags: string[];
+  readonly description: string;
+
   ___HeimdallEndpoint___ = true;
+
+  /**
+   * Checks if the given resource is a HeimdallEndpoint.
+   *
+   * @param resource - The resource to check.
+   * @returns - Whether the resource is a HeimdallEndpoint.
+   */
+  static isEndpoint(
+    resource: unknown,
+  ): resource is HeimdallEndpointV2<HeimdallPath> {
+    return Boolean(
+      resource &&
+        typeof resource === "object" &&
+        (resource as HeimdallEndpointV2<HeimdallPath>).___HeimdallEndpoint___,
+    );
+  }
 
   constructor(
     {
-      body,
-      params,
       handler,
-      response,
-      search,
       services,
+      description = "Missing Endpoint Description",
+      tags = [],
       serviceDiscovery,
       method,
       path,
+      ...options
     }: HeimdallEndpointV2Options<
       TPath,
       TSearch,
@@ -82,16 +104,21 @@ export class HeimdallEndpointV2<
       TServices
     >,
   ) {
+    const body = options.body as TBody;
+    const params = options.params as TParams;
+    const search = options.search as TSearch;
+    const response = options.response as TResponse;
+
     super({
       handler: HeimdallEndpointV2.wrapHeimdallEndpointHandler(handler),
       input: {
-        body: body as TBody,
-        params: params as TParams,
-        search: search as TSearch,
+        body,
+        params,
+        search,
       },
       response: {
         statusCode: z.number(),
-        body: response as TResponse,
+        body: response,
       },
       services,
       serviceDiscovery,
@@ -99,6 +126,12 @@ export class HeimdallEndpointV2<
 
     this.method = method;
     this.path = path;
+    this.body = body;
+    this.res = response;
+    this.params = params;
+    this.search = search;
+    this.description = description;
+    this.tags = tags;
   }
 
   /**
@@ -106,6 +139,26 @@ export class HeimdallEndpointV2<
    */
   get route(): HeimdallRoute<TPath, HttpMethod> {
     return `${this.method} ${this.path}` as HeimdallRoute<TPath, HttpMethod>;
+  }
+
+  get handlerName(): string {
+    if (!this._handlerPath) {
+      throw `${this.route} does not have a handler path. Please set it manually.`;
+    }
+
+    const [_, method] = this._handlerPath.split("#");
+
+    return method;
+  }
+
+  get handlerPath(): string {
+    if (!this._handlerPath) {
+      throw `${this.route} does not have a handler path. Please set it manually.`;
+    }
+
+    const [p] = this._handlerPath.split("#");
+
+    return p;
   }
 }
 
@@ -127,6 +180,8 @@ export type HeimdallRoute<
   TMethod extends HttpMethod = HttpMethod,
 > = `${TMethod} ${TPath}`;
 
+export type StatusScodeSchema = StandardSchemaV1<number | string, number>;
+export type StatusCode = StandardSchemaV1.InferOutput<StatusScodeSchema>;
 export type HeimdallEndpointResponseSchema<
   TResponse extends VoidableStandardSchema = undefined,
 > = {
@@ -134,7 +189,7 @@ export type HeimdallEndpointResponseSchema<
   body: TResponse;
 };
 
-export type HeimdalltEndpointHandlerEvent<
+export type HeimdallEndpointHandlerEvent<
   TBody extends VoidableStandardSchema = undefined,
   TSearch extends VoidableStandardSchema = undefined,
   TParams extends VoidableStandardSchema = undefined,
@@ -155,7 +210,7 @@ export type HeimdallEndpointHandler<
   TResponse extends VoidableStandardSchema,
   TServices extends HermodServiceConstructor[] = [],
 > = (
-  input: HeimdalltEndpointHandlerEvent<
+  input: HeimdallEndpointHandlerEvent<
     TBody,
     TSearch,
     TParams,
@@ -171,7 +226,7 @@ export type HeimdallEndpointAuthorizer<
   TParams extends StandardSchemaV1 | undefined = undefined,
   TServices extends HermodServiceConstructor[] = [],
 > = (
-  input: HeimdalltEndpointHandlerEvent<
+  input: HeimdallEndpointHandlerEvent<
     TBody,
     TSearch,
     TParams,

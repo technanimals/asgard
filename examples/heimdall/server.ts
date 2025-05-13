@@ -1,15 +1,16 @@
-import { defineConfig, HeimdallConfig } from "@asgard/heimdall/config";
+import { defineConfig } from "@asgard/heimdall/config";
 import {
   HeimdallAWSApiGatewayV2DeploymentProvider,
-  HeimdallDeploymentProvider,
 } from "@asgard/heimdall/deployment";
 
-// import { HeimdallHonoServer } from "@asgard/heimdall/hono";
-// import { HermodServiceDiscovery } from "@asgard/hermod";
+import { HeimdallHonoServer } from "@asgard/heimdall/hono";
+import { HermodServiceDiscovery } from "@asgard/hermod";
 
-// import { resolver as zodResolver } from "hono-openapi/zod";
-// import { LoggerService, UserService } from "./routes/services.ts";
+import { resolver as zodResolver } from "hono-openapi/zod";
+import { LoggerService, UserService } from "./routes/services.ts";
 import process from "node:process";
+import { ZodVoid } from "zod";
+import { ZodObject } from "zod";
 
 const config = defineConfig({
   routes: ["**/routes/**/{post,get,post,options,delete}.ts"],
@@ -23,15 +24,20 @@ const deployment = new HeimdallAWSApiGatewayV2DeploymentProvider();
 
 deployment.export(endpoints, process.cwd());
 
-// const resolver = HeimdallHonoServer.createGenericResolver(zodResolver);
+const resolver = HeimdallHonoServer.createGenericResolver(zodResolver);
 
-// const server = await HeimdallHonoServer.createServer({
-//   endpoints,
-//   services: [LoggerService, UserService],
-//   resolver,
-//   serviceDiscovery: HermodServiceDiscovery.getInstance(),
-// });
+const server = await HeimdallHonoServer.createServer({
+  endpoints,
+  services: [LoggerService, UserService],
+  resolver,
+  serviceDiscovery: HermodServiceDiscovery.getInstance(),
+  isVoidSchema: (schema) => {
+    if (!schema) {
+      return true;
+    }
 
-// console.log(await HeimdallConfig.createAWSHandlersFromEndpoints(endpoints));
+    return schema instanceof ZodVoid;
+  },
+});
 
-// Deno.serve(server.app.fetch);
+Deno.serve(server.app.fetch);

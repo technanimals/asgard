@@ -102,6 +102,11 @@ export class HeimdallHandler<
   protected services: TServices;
   protected readonly input: TInput;
   protected readonly response: TResponse;
+  protected readonly middleware: HeimdallMiddlewareObject<
+    TInput,
+    TResponse,
+    TServices
+  >[];
   protected readonly serviceDiscovery: HermodServiceDiscovery<
     HermodServiceRecord<TServices>
   >;
@@ -116,6 +121,7 @@ export class HeimdallHandler<
     this.services = options.services;
     this.input = options.input;
     this.response = options.response;
+    this.middleware = options.middleware ?? [];
     this.serviceDiscovery = options.serviceDiscovery ??
       HermodServiceDiscovery.getInstance();
   }
@@ -130,9 +136,8 @@ export class HeimdallHandler<
     TInput,
     TResponse
   > = async (input) => {
-    const data = await HeimdallHandler.parseSchema(this.input, input);
-
     const services = await this.serviceDiscovery.register(this.services);
+    const data = await HeimdallHandler.parseSchema(this.input, input);
 
     const response = await this.handler({
       input: data,
@@ -191,7 +196,7 @@ export type HeimdallHandlerType<
     TServices
   >,
 ) => Promise<
-  HeimdallValidationSchemaOutput<TResponse>
+  RemoveNever<HeimdallValidationSchemaOutput<TResponse>>
 >;
 
 export type HeimdallHandlerRunner<
@@ -203,11 +208,22 @@ export type HeimdallHandlerRunner<
   HeimdallValidationSchemaOutput<TResponse>
 >;
 
+export type HeimdallMiddlewareObject<
+  TInput extends HeimdallBaseSchema,
+  TResponse extends HeimdallBaseSchema,
+  TServices extends HermodServiceConstructor[] = [],
+> = {
+  before?: () => Promise<void>;
+  after?: () => Promise<void>;
+  onError?: () => Promise<void>;
+};
+
 export type HeimdallHandlerOptions<
   TInput extends HeimdallBaseSchema,
   TResponse extends HeimdallBaseSchema,
   TServices extends HermodServiceConstructor[] = [],
 > = {
+  middleware?: HeimdallMiddlewareObject<TInput, TResponse, TServices>[];
   /***
    * The response body schema.
    */

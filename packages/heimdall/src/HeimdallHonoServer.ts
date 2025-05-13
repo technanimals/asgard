@@ -2,12 +2,14 @@ import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
 import { describeRoute, openAPISpecs, type ResolverResult } from "hono-openapi";
 
-import {
-  type HermodServiceConstructor,
+import type {
+  HermodServiceConstructor,
   HermodServiceDiscovery,
-  type HermodServiceRecord,
+  HermodServiceRecord,
 } from "@asgard/hermod";
-import type { HeimdallEndpoint, HeimdallPath } from "./HeimdallEndpoint.ts";
+
+import type { HeimdallEndpointV2, HeimdallPath } from "./HeimdallEndpointV2.ts";
+import { StandardSchemaV1 } from "@standard-schema/spec";
 
 export class HeimdallHonoServer<
   TServices extends HermodServiceConstructor[] = [],
@@ -20,7 +22,6 @@ export class HeimdallHonoServer<
    * @returns
    */
   static createGenericResolver<S>(
-    //
     // deno-lint-ignore no-explicit-any
     resolver: (schema: any) => any,
   ): HeimdallSchemaResolver<S> {
@@ -47,11 +48,12 @@ export class HeimdallHonoServer<
       version = "1.0.0",
       resolver,
       serviceDiscovery,
+      isVoidSchema,
     } = options;
 
     const services = await serviceDiscovery.register(serviceConstructors);
 
-    endpoints.forEach((endpoint) => {
+    for (const endpoint of endpoints) {
       const method = endpoint.method.toLowerCase() as
         | "get"
         | "post"
@@ -59,13 +61,11 @@ export class HeimdallHonoServer<
         | "delete"
         | "options";
 
-      const content = endpoint.responseSchema
-        ? {
-          "application/json": {
-            schema: resolver(endpoint.responseSchema),
-          },
-        }
-        : undefined;
+      const content = await isVoidSchema(endpoint.res) ? undefined : {
+        "application/json": {
+          schema: resolver(endpoint.res),
+        },
+      };
       app[method](
         endpoint.path,
         describeRoute({
@@ -79,38 +79,26 @@ export class HeimdallHonoServer<
           },
         }),
         async (c) => {
-          const serviceDiscovery = HermodServiceDiscovery.getInstance();
-
-          const services = await serviceDiscovery.register(
-            endpoint.services,
-          );
-
           const body = await c.req.json().catch(() => undefined);
-          const p = c.req.param();
-          const q = c.req.query();
+          const params = c.req.param();
+          const search = c.req.query();
 
-          const data = await endpoint.body(body);
-          const params = await endpoint.params(p);
-          const search = await endpoint.search(q);
-
-          const response = await endpoint.execute({
-            data,
+          const response = await endpoint.run({
+            body,
             params,
             search,
             services,
           });
 
-          const result = await endpoint.response(response);
-
           return c.json(
-            result.body,
+            response.body,
             // deno-lint-ignore ban-ts-comment
             // @ts-ignore
             response.statusCode,
           );
         },
       );
-    });
+    }
 
     app.get(
       "/openapi",
@@ -156,9 +144,12 @@ export interface HeimdallHonoServerOptions<
   name?: string;
   description?: string;
   version?: string;
-  endpoints: HeimdallEndpoint<HeimdallPath>[];
+  endpoints: HeimdallEndpointV2<HeimdallPath>[];
   services: TServices;
   resolver: TSchemaResolver;
+  isVoidSchema: (
+    schema: StandardSchemaV1 | undefined,
+  ) => Promise<boolean> | boolean;
   serviceDiscovery: HermodServiceDiscovery;
 }
 

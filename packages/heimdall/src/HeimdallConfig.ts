@@ -6,6 +6,7 @@ import {
   type HeimdallPath,
   type HeimdallRoute,
 } from "./HeimdallEndpoint.ts";
+import { HeimdallEndpointV2 } from "./HeimdallEndpointV2.ts";
 
 export class HeimdallConfig {
   private routes: Pattern[];
@@ -38,7 +39,7 @@ export class HeimdallConfig {
    */
   static async getEndpointFromFile(
     f: string,
-  ): Promise<HeimdallEndpoint<HeimdallPath>[]> {
+  ): Promise<HeimdallEndpointV2<HeimdallPath>[]> {
     console.log("Importing file: ", f);
     const file = await import(f);
 
@@ -47,10 +48,10 @@ export class HeimdallConfig {
     console.log("Export names:", exportNames);
 
     const endpoints = exportNames.reduce(
-      (acc: HeimdallEndpoint<HeimdallPath>[], e) => {
+      (acc: HeimdallEndpointV2<HeimdallPath>[], e) => {
         const fileExport = file[e];
 
-        if (HeimdallEndpoint.isEndpoint(fileExport)) {
+        if (HeimdallEndpointV2.isEndpoint(fileExport)) {
           console.log("Found endpoint: ", fileExport.route);
           // const relativePath = path.relative(root, f);
 
@@ -108,12 +109,14 @@ export class HeimdallConfig {
     routes: Pattern[],
     cwd: string,
     throwOnDuplicate = true,
-  ): Promise<Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>> {
+  ): Promise<
+    Map<HeimdallRoute<HeimdallPath>, HeimdallEndpointV2<HeimdallPath>>
+  > {
     const files = fg.stream(routes, { dot: true, cwd });
 
     const endpoints: Map<
       HeimdallRoute<HeimdallPath>,
-      HeimdallEndpoint<HeimdallPath>
+      HeimdallEndpointV2<HeimdallPath>
     > = new Map();
 
     for await (const f of files) {
@@ -161,7 +164,7 @@ export class HeimdallConfig {
    * @returns - A map of endpoints with their routes as keys.
    */
   getEndpoints(): Promise<
-    Map<HeimdallRoute<HeimdallPath>, HeimdallEndpoint<HeimdallPath>>
+    Map<HeimdallRoute<HeimdallPath>, HeimdallEndpointV2<HeimdallPath>>
   > {
     return HeimdallConfig.getEndpoints(
       this.routes,

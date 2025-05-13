@@ -1,10 +1,10 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type {
-  HeimdallEndpoint,
-  HeimdallEndpointHandlerInput,
+  HeimdallEndpointHandlerEvent,
+  HeimdallEndpointV2,
   HeimdallPath,
   StatusCode,
-} from "./HeimdallEndpoint.ts";
+} from "./HeimdallEndpointV2.ts";
 
 import {
   type HermodServiceConstructor,
@@ -24,7 +24,7 @@ export class HeimdallAWSAPIGatewayV2Handler<
   TServices extends HermodServiceConstructor[] = [],
 > {
   constructor(
-    private readonly endpoint: HeimdallEndpoint<
+    private readonly endpoint: HeimdallEndpointV2<
       TPath,
       TBody,
       TResponse,
@@ -39,14 +39,15 @@ export class HeimdallAWSAPIGatewayV2Handler<
   private _handler(
     e:
       & APIGatewayProxyEventV2
-      & HeimdallEndpointHandlerInput<
+      & HeimdallEndpointHandlerEvent<
         TBody,
         TSearch,
         TParams,
         TServices
       >,
   ) {
-    return this.endpoint.execute(e);
+    // deno-lint-ignore no-explicit-any
+    return this.endpoint.run(e as any);
   }
 
   private parseBody(body: string) {
@@ -59,36 +60,27 @@ export class HeimdallAWSAPIGatewayV2Handler<
 
   handler: APIGatewayV2Handler = middy(this._handler.bind(this)).use(
     {
-      before: async (request) => {
+      before: (request) => {
         const {
           body: rawBody,
           pathParameters = {},
           queryStringParameters = {},
         } = request.event;
 
-        const services = await this.serviceDiscovery.register(
-          this.endpoint.services,
-        );
-
         const body = this.parseBody(rawBody || "{}");
 
-        request.event.data = await this.endpoint.body(body);
-        request.event.params = await this.endpoint.params(pathParameters);
+        request.event.body = body;
+        request.event.params = pathParameters;
 
-        request.event.search = await this.endpoint.search(
-          queryStringParameters,
-        );
-
-        request.event.services = services;
+        request.event.search = queryStringParameters;
       },
-      after: async (request) => {
+      after: (request) => {
         const res = request.response;
 
         if (res) {
-          const response = await this.endpoint.response(res);
-          const body = typeof response.body === "string"
-            ? response.body
-            : JSON.stringify(response.body);
+          const body = typeof res.body === "string"
+            ? res.body
+            : JSON.stringify(res.body);
           request.response.body = body;
         }
       },

@@ -1,8 +1,8 @@
 import type {
-  HeimdallEndpoint,
+  HeimdallEndpointV2,
   HeimdallPath,
   HeimdallRoute,
-} from "./HeimdallEndpoint.ts";
+} from "./HeimdallEndpointV2.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -53,7 +53,7 @@ export abstract class HeimdallDeploymentProvider<
   protected abstract getRoute(route: HeimdallRoute<HeimdallPath>): string;
 
   static async export<TProvider extends HeimdallDeploymentProvideName>(
-    endpoints: HeimdallEndpoint<HeimdallPath>[],
+    endpoints: HeimdallEndpointV2<HeimdallPath>[],
     provider: TProvider,
     cwd: string,
     providerImport: ProviderImport,
@@ -61,8 +61,8 @@ export abstract class HeimdallDeploymentProvider<
   ): Promise<void> {
     const parent = path.join(cwd, ".heimdall", provider);
     const handlerPath = path.join(parent, "handlers.ts");
-    // deno-lint-ignore no-explicit-any
-    const handlers: any[] = [];
+    const handlers: Handler[] = [];
+
     await fs.mkdir(parent, { recursive: true });
     for await (const e of endpoints) {
       const file = `${HeimdallDeploymentProvider.normalizeRoute(e.route)}.ts`;
@@ -103,7 +103,7 @@ export abstract class HeimdallDeploymentProvider<
   }
 
   export(
-    endpoints: HeimdallEndpoint<HeimdallPath>[],
+    endpoints: HeimdallEndpointV2<HeimdallPath>[],
     cwd: string,
   ): Promise<void> {
     return HeimdallDeploymentProvider.export(
@@ -124,3 +124,9 @@ export type ProviderImport<
 > = `import { ${TProvider} as Provider } from '@asgard/heimdall/${TCloud}';`;
 
 export type GetProviderRoute = (route: HeimdallRoute<HeimdallPath>) => string;
+
+type Handler = {
+  name: string;
+  handler: string;
+  route: string;
+};
