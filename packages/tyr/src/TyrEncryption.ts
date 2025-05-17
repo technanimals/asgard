@@ -1,19 +1,31 @@
-export abstract class TyrEncryption {
-  /** Generate a new X25519 key pair */
-  abstract generateKeyPair(): KeyPair;
+import { sha256 } from "@noble/hashes/sha2";
+import { hkdf } from "@noble/hashes/hkdf";
+import nacl from "tweetnacl";
+export class TyrEncryption {
+  /** Generate X25519 key pair */
+  generateKeyPair(): KeyPair {
+    const keyPair = nacl.box.keyPair();
+    return {
+      public: keyPair.publicKey,
+      private: keyPair.secretKey,
+    };
+  }
 
-  /** Compute shared secret from peer public key */
-  abstract computeSharedSecret(
+  /** Compute shared secret using X25519 (scalarMult) */
+
+  computeSharedSecret(
     privateKey: Uint8Array,
     peerPublicKey: Uint8Array,
-  ): Uint8Array;
+  ): Uint8Array {
+    return nacl.scalarMult(privateKey.subarray(0, 32), peerPublicKey);
+  }
 
   /** Derive symmetric key using HKDF from shared secret */
-  async deriveSymmetricKey(
+  deriveSymmetricKey(
     privateKey: Uint8Array,
     peerPublicKey: Uint8Array,
-  ): Promise<Uint8Array> {
-    const sharedSecret = await this.computeSharedSecret(
+  ): Uint8Array {
+    const sharedSecret = this.computeSharedSecret(
       privateKey,
       peerPublicKey,
     );
@@ -21,12 +33,12 @@ export abstract class TyrEncryption {
   }
 
   /** Encrypt a message using derived shared key */
-  async encryptMessageFor(
+  encryptMessageFor(
     privateKey: Uint8Array,
     peerPublicKey: Uint8Array,
     message: string,
-  ): Promise<{ nonce: Uint8Array; ciphertext: Uint8Array }> {
-    const key = await this.deriveSymmetricKey(privateKey, peerPublicKey);
+  ): { nonce: Uint8Array; ciphertext: Uint8Array } {
+    const key = this.deriveSymmetricKey(privateKey, peerPublicKey);
     const nonce = this.generateRandomBytes(24); // NaCl's secretbox nonce size
     const msgBytes = new TextEncoder().encode(message);
     const ciphertext = this.createSecretbox(msgBytes, nonce, key);
@@ -46,33 +58,39 @@ export abstract class TyrEncryption {
     return new TextDecoder().decode(decrypted);
   }
 
-  // /** Export public key */
-  // getPublicKey(): Uint8Array {
-  //   return this.publicKey;
-  // }
+  /** Generate secure random bytes */
+  protected generateRandomBytes(length: number): Uint8Array {
+    return nacl.randomBytes(length);
+  }
 
-  // /** Export private key */
-  // getPrivateKey(): Uint8Array {
-  //   return this.privateKey;
-  // }
-
-  // --- Abstracted crypto primitives ---
-  protected abstract generateRandomBytes(length: number): Uint8Array;
-  protected abstract createSecretbox(
-    message: Uint8Array,
+  /** Symmetric encryption using NaCl's secretbox (XSalsa20 + Poly1305) */
+  protected createSecretbox(
+    msg: Uint8Array,
     nonce: Uint8Array,
     key: Uint8Array,
-  ): Uint8Array;
-  protected abstract openSecretBox(
+  ): Uint8Array {
+    return nacl.secretbox(msg, nonce, key);
+  }
+
+  /** Symmetric decryption */
+  protected openSecretBox(
     ciphertext: Uint8Array,
     nonce: Uint8Array,
     key: Uint8Array,
-  ): Uint8Array | null;
-  protected abstract hkdf(
-    input: Uint8Array,
-    length: number,
-    info: string,
-  ): Uint8Array;
+  ): Uint8Array | null {
+    return nacl.secretbox.open(ciphertext, nonce, key);
+  }
+
+  /** HKDF-SHA256 to derive a 32-byte symmetric key from shared secret */
+  protected hkdf(input: Uint8Array, length: number, info: string): Uint8Array {
+    return hkdf(
+      sha256,
+      input,
+      new Uint8Array(0), // optional
+      new TextEncoder().encode(info),
+      length,
+    );
+  }
 }
 // export
 

@@ -30,282 +30,98 @@ ensure your data remains secure across platforms.
 ## Installation
 
 ```bash
+# Using npm
+npm install @asgard/tyr
+
 # Using JSR
 npx jsr add @asgard/tyr
 ```
 
-## Getting Started
+## Usage
 
-### Basic End-to-End Encryption
+> **Note for React Native:**\
+> To ensure secure random number generation, you **must** add the following
+> import at the top of your entry file (e.g., `index.js` or `App.tsx`):
+>
+> ```js
+> import "react-native-get-random-values";
+> ```
 
 ```typescript
-import { TyrE2EFactory } from "@asgard/tyr";
+import { TyrEncryption } from "@asgard/tyr";
 
-// Initialize E2E encryption (works in browser, Node.js, or React Native)
-const e2e = await TyrE2EFactory.createForBrowser();
+// Alice and Bob generate key pairs
+const alice = new TyrEncryption();
+const bob = new TyrEncryption();
 
-// Generate or retrieve existing key pair
-const keyPair = e2e.getKeyPair();
-console.log("My public key:", keyPair.publicKey);
+const aliceKeys = alice.generateKeyPair();
+const bobKeys = bob.generateKeyPair();
 
-// Encrypt a message for someone (using their public key)
-const recipientPublicKey = "..."; // Recipient's public key
-const encryptedMessage = e2e.encryptMessage(
-  "This is a secret message",
-  recipientPublicKey,
+// Compute shared secret and derive symmetric key
+const aliceSymKey = alice.deriveSymmetricKey(aliceKeys.private, bobKeys.public);
+const bobSymKey = bob.deriveSymmetricKey(bobKeys.private, aliceKeys.public);
+
+// Encrypt a message from Alice to Bob
+const message = "Hello, Bob!";
+const { nonce, ciphertext } = alice.encryptMessageFor(
+  aliceKeys.private,
+  bobKeys.public,
+  message,
 );
 
-// Send the encrypted message through any channel
-sendMessage(encryptedMessage);
-
-// Recipient can decrypt the message (with their own private key)
-const decryptedMessage = recipientE2E.decryptMessage(encryptedMessage);
-console.log(decryptedMessage); // "This is a secret message"
-```
-
-### Secure File or Large Data Sharing
-
-```typescript
-// Generate a symmetric key for efficient encryption of large data
-const symmetricKey = e2e.generateSymmetricKey();
-
-// Encrypt large data with the symmetric key
-const largeData = "..."; // Could be a file, image, etc.
-const encryptedData = e2e.encryptWithSymmetricKey(largeData, symmetricKey);
-
-// Securely share the symmetric key with the recipient
-const encryptedKey = e2e.shareSymmetricKey(symmetricKey, recipientPublicKey);
-
-// Send both the encrypted data and encrypted key to the recipient
-sendToRecipient({ encryptedData, encryptedKey });
-
-// Recipient decrypts the symmetric key first
-const decryptedKey = recipientE2E.receiveSymmetricKey(encryptedKey);
-
-// Then uses it to decrypt the large data
-const decryptedData = recipientE2E.decryptWithSymmetricKey(
-  encryptedData.encrypted,
-  encryptedData.nonce,
-  decryptedKey,
-);
-```
-
-## Platform-Specific Usage
-
-### Browser
-
-```typescript
-import { TyrE2EFactory } from "@asgard/tyr";
-
-async function secureChat() {
-  // Keys will be stored in localStorage
-  const e2e = await TyrE2EFactory.createForBrowser();
-
-  // Rest of your code...
-}
-```
-
-### React Native
-
-```typescript
-import { TyrE2EFactory } from "@asgard/tyr";
-import * as SecureStore from "expo-secure-store";
-
-async function secureMobileApp() {
-  // Keys will be stored in SecureStore
-  const e2e = await TyrE2EFactory.createForReactNative(SecureStore);
-
-  // Rest of your code...
-}
-```
-
-### Node.js
-
-```typescript
-import { TyrE2EFactory } from "@asgard/tyr";
-
-async function secureServer() {
-  // Keys will be stored in the file system
-  const e2e = await TyrE2EFactory.createForNode("./secure-keys");
-
-  // Rest of your code...
-}
-```
-
-## API Reference
-
-### TyrE2E Class
-
-The main class providing encryption functionality.
-
-```typescript
-class TyrE2E {
-  constructor(existingKeyPair?: KeyPair);
-
-  // Key management
-  generateKeyPair(): KeyPair;
-  getKeyPair(): KeyPair;
-  importKeyPair(keyPair: KeyPair): void;
-
-  // Asymmetric encryption (public/private key)
-  encryptMessage(message: string, recipientPublicKey: string): EncryptedMessage;
-  decryptMessage(encryptedMessage: EncryptedMessage): string;
-
-  // Symmetric encryption (shared key)
-  generateSymmetricKey(): string;
-  encryptWithSymmetricKey(
-    data: string,
-    symmetricKey: string,
-  ): { encrypted: string; nonce: string };
-  decryptWithSymmetricKey(
-    encrypted: string,
-    nonce: string,
-    symmetricKey: string,
-  ): string;
-
-  // Sharing symmetric keys securely
-  shareSymmetricKey(
-    symmetricKey: string,
-    recipientPublicKey: string,
-  ): EncryptedMessage;
-  receiveSymmetricKey(encryptedKey: EncryptedMessage): string;
-}
-```
-
-### TyrE2EFactory
-
-Factory for creating TyrE2E instances with appropriate storage adapters.
-
-```typescript
-class TyrE2EFactory {
-  static async createForBrowser(): Promise<TyrE2E>;
-  static async createForReactNative(secureStore: any): Promise<TyrE2E>;
-  static async createForNode(keyPath?: string): Promise<TyrE2E>;
-  static createInMemory(): TyrE2E; // For testing
-}
-```
-
-## Advanced Usage
-
-### Group Encryption
-
-```typescript
-// Admin generates a symmetric key for the group
-const groupKey = e2e.generateSymmetricKey();
-
-// Encrypt the group key for each member
-const encryptedKeys = {};
-for (const member of groupMembers) {
-  encryptedKeys[member.id] = e2e.shareSymmetricKey(
-    groupKey,
-    member.publicKey,
-  );
-}
-
-// Distribute the encrypted keys to members
-distributeKeys(encryptedKeys);
-
-// Any member can now encrypt messages using the group key
-const encryptedGroupMessage = e2e.encryptWithSymmetricKey(
-  "Hello group!",
-  groupKey,
+// Bob decrypts the message
+const decrypted = await bob.decryptMessageFrom(
+  bobKeys.private,
+  aliceKeys.public,
+  ciphertext,
+  nonce,
 );
 
-// And any member with the group key can decrypt messages
-const decryptedGroupMessage = e2e.decryptWithSymmetricKey(
-  encryptedGroupMessage.encrypted,
-  encryptedGroupMessage.nonce,
-  groupKey,
-);
+console.log(decrypted); // "Hello, Bob!"
 ```
 
-## Security Considerations
+## API
 
-- Store private keys securely and never expose them
-- Exchange public keys through secure channels when possible
-- Implement additional authentication to verify message senders
-- Consider implementing key rotation for long-term communications
-- Remember that E2E encryption protects the content, but not metadata
-- Follow platform-specific security best practices
+### `TyrEncryption`
 
-## Integration with other @asgard packages
+#### `generateKeyPair(): KeyPair`
 
-@asgard/tyr works seamlessly with other packages in the @asgard ecosystem:
+Generates a new X25519 key pair.
 
-### With @asgard/heimdall (API Framework)
+#### `computeSharedSecret(privateKey, peerPublicKey): Uint8Array`
+
+Computes a shared secret using ECDH (X25519).
+
+#### `deriveSymmetricKey(privateKey, peerPublicKey): Uint8Array`
+
+Derives a 32-byte symmetric key from the shared secret using HKDF-SHA256.
+
+#### `encryptMessageFor(privateKey, peerPublicKey, message): { nonce, ciphertext }`
+
+Encrypts a message for a peer using the derived symmetric key. Returns a random
+nonce and ciphertext.
+
+#### `decryptMessageFrom(privateKey, peerPublicKey, ciphertext, nonce): Promise<string | null>`
+
+Decrypts a ciphertext using the derived symmetric key. Returns the plaintext
+string or `null` if authentication fails.
+
+#### Types
 
 ```typescript
-import { HeimdallEndpoint } from "@asgard/heimdall";
-import { TyrE2EFactory } from "@asgard/tyr";
-
-// Initialize encryption
-const e2e = await TyrE2EFactory.createForNode();
-
-// Create an encrypted API endpoint
-const secureEndpoint = new HeimdallEndpoint({
-  path: "/api/secure-data",
-  method: "POST",
-  handler: async ({ data }) => {
-    try {
-      // Decrypt the incoming data
-      const decryptedData = e2e.decryptMessage(data.encryptedMessage);
-
-      // Process the data
-      const result = processSecureData(decryptedData);
-
-      // Encrypt the response
-      const encryptedResponse = e2e.encryptMessage(
-        JSON.stringify(result),
-        data.publicKey,
-      );
-
-      return {
-        statusCode: 200,
-        body: { encryptedResponse },
-      };
-    } catch (error) {
-      return {
-        statusCode: 400,
-        body: { message: "Failed to process encrypted data" },
-      };
-    }
-  },
-});
+type KeyPair = {
+  public: Uint8Array;
+  private: Uint8Array;
+};
 ```
 
-### With @asgard/hermod (Service Discovery)
+## Security Notes
 
-```typescript
-import { HermodService } from "@asgard/hermod";
-import { TyrE2EFactory } from "@asgard/tyr";
-
-class EncryptionService extends HermodService<"encryption", TyrE2E> {
-  serviceName = "encryption";
-
-  async register() {
-    // Create an E2E encryption instance
-    const e2e = await TyrE2EFactory.createForNode("./service-keys");
-    return e2e;
-  }
-}
-
-// In your API handler
-const endpoint = new HeimdallEndpoint({
-  // ...
-  services: [EncryptionService],
-  handler: async ({ services }) => {
-    const encryptionService = services.encryption;
-
-    // Use the encryption service
-    const encrypted = encryptionService.encryptMessage(
-      "Secure data",
-      recipientPublicKey,
-    );
-
-    return { statusCode: 200, body: { encrypted } };
-  },
-});
-```
+- Always generate a new random nonce for each message.
+- Never reuse a nonce with the same key.
+- Keep private keys secret and never transmit them.
+- This library is intended for secure messaging and key exchange, not for
+  password storage or hashing.
 
 ## License
 
