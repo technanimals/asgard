@@ -14,7 +14,7 @@ export class JordConfigParser<TResponse extends EmptyObject> {
   parse(): JordInferConfig<TResponse> {
     const errors: z.ZodIssue[] = [];
 
-    const parseDeep = <T extends EmptyObject>(
+    const parseDeep = <T>(
       config: T,
     ) => {
       const result: EmptyObject = {};
@@ -37,7 +37,7 @@ export class JordConfigParser<TResponse extends EmptyObject> {
               path: [key, ...(issue.path as string[])],
             })));
           }
-        } else if (schema && typeof schema === "object") {
+        } else if (schema) {
           set(result, key, parseDeep(schema as EmptyObject));
         }
       }
